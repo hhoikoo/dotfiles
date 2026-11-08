@@ -1,0 +1,12 @@
+[settings]
+# Honour .nvmrc / packageManager-style version files for these tools
+idiomatic_version_file_enable_tools = ["node", "pnpm"]
+
+[tools]
+node = "lts"
+pnpm = "latest"
+# Linux only: apt's versions are too old, Homebrew provides these on macOS
+neovim = { version = "latest", os = ["linux"] }
+tree-sitter = { version = "latest", os = ["linux"] }
+gh = { version = "latest", os = ["linux"] }
+yq = { version = "latest", os = ["linux"] }

@@ -1,0 +1,6 @@
+{
+  "name": "slash-menu",
+  "version": "0.1.0",
+  "description": "Replaces the / command list with a grouped menu above the prompt, with descriptions beside it",
+  "types": "./types/index.d.ts"
+}

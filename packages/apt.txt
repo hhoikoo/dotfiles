@@ -1,0 +1,25 @@
+# Core
+zsh
+tmux
+git
+stow
+curl
+ca-certificates
+unzip
+build-essential
+
+# CLI tools
+fzf
+zoxide
+ripgrep
+fd-find
+bat
+eza
+git-delta
+lazygit
+btop
+tealdeer
+jq
+du-dust
+shellcheck
+just

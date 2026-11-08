@@ -1,0 +1,29 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "sh ~/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "cc-plugin-you-should-know@builtin": true,
+    "cc-plugin-telemetry@builtin": false,
+    "cc-plugin-diff@builtin": false
+  },
+  "effortLevel": "high",
+  "promptSuggestionEnabled": false,
+  "awaySummaryEnabled": false,
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "auto",
+  "remoteControlAtStartup": false,
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet",
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/slash-menu"
+  }
+}

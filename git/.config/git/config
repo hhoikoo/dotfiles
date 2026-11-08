@@ -1,0 +1,26 @@
+[init]
+	defaultBranch = main
+[core]
+	editor = nvim
+	pager = delta
+	autocrlf = input
+	eol = lf
+[color]
+	ui = auto
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+[merge]
+	conflictStyle = zdiff3
+# Never guess an identity; it comes from the untracked local file
+[user]
+	useConfigOnly = true
+# Sign commits with SSH keys
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	allowedSignersFile = ~/.config/git/allowed_signers
+# Machine-specific identity and signing key (untracked); keep this last
+[include]
+	path = ~/.config/git/local

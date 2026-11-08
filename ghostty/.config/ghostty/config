@@ -1,0 +1,60 @@
+# Font family and size in points
+font-family = "Jetendard"
+font-size = 14
+
+# Color theme, loaded from ./themes/
+theme = jellybeans-hc
+
+# Solid, non-blinking white block cursor
+cursor-style = block
+cursor-style-blink = false
+cursor-color = #ffffff
+cursor-text = #000000
+
+# Space between the window edge and the text grid
+window-padding-x = 8
+window-padding-y = 6
+window-padding-balance = true
+
+# Show tabs inside the titlebar instead of a separate tab bar
+macos-titlebar-style = tabs
+
+# Reopen windows and tabs from the previous session on launch
+window-save-state = always
+
+# New windows and tabs start in the home folder
+working-directory = home
+window-inherit-working-directory = false
+tab-inherit-working-directory = false
+
+# Quit the app when the last window is closed
+quit-after-last-window-closed = true
+
+# Selecting text copies it to the system clipboard
+copy-on-select = clipboard
+
+# Left Option sends Alt/Meta; right Option types special characters
+macos-option-as-alt = left
+
+# Shell integration: leave the cursor shape alone; install terminfo and
+# forward env vars on ssh
+shell-integration-features = no-cursor,ssh-terminfo,ssh-env
+
+# Ctrl+Option+Return maximizes the window
+keybind = ctrl+alt+enter=toggle_maximize
+
+# Disable all split keybindings
+keybind = super+d=unbind
+keybind = super+shift+d=unbind
+keybind = super+shift+enter=unbind
+keybind = super+[=unbind
+keybind = super+]=unbind
+keybind = super+alt+arrow_up=unbind
+keybind = super+alt+arrow_down=unbind
+keybind = super+alt+arrow_left=unbind
+keybind = super+alt+arrow_right=unbind
+keybind = super+ctrl+arrow_up=unbind
+keybind = super+ctrl+arrow_down=unbind
+keybind = super+ctrl+arrow_left=unbind
+keybind = super+ctrl+arrow_right=unbind
+keybind = super+ctrl+==unbind
