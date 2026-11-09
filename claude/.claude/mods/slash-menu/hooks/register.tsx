@@ -17,7 +17,7 @@ const GROUPS = [
 
 const GROUP_IDS: readonly string[] = GROUPS.map(g => g.id)
 
-// Where built-ins go until Opus has judged them (the first open after an
+// Where built-ins go until the model has judged them (the first open after an
 // update, for a few seconds).
 const STATIC: Record<string, string> = {}
 function put(group: string, names: string) {
@@ -158,7 +158,7 @@ async function judge($: Engine, items: Raw[], coreAlready: string[]): Promise<Re
     `\nCommands:\n${lines}\n\n` +
     `Answer with one JSON object only, mapping each command name to [groupId, importance], e.g. {"clear":["conversation",1]}. No prose.`
   try {
-    const r = await $.model.complete({ model: 'opus', prompt, maxTokens: 8000, effort: 'medium', timeoutMs: 180000 })
+    const r = await $.model.complete({ model: judgeModel, prompt, maxTokens: 8000, effort: 'medium', timeoutMs: 180000 })
     if (!r.isAnswered) {
       $.ui.log(`slash-menu: judging skipped (${r.reason})`)
       return {}
@@ -400,7 +400,10 @@ async function countRun($: Engine, command: string) {
 
 // ── hooks ─────────────────────────────────────────────────────────────────
 
-export const register: Register = on => {
+let judgeModel = 'sonnet'
+
+export const register: Register = (on, options) => {
+  judgeModel = typeof options?.judgeModel === 'string' && options.judgeModel ? options.judgeModel : 'sonnet'
   on('session.start', async ($, e, next) => {
     const r = await next(e)
     if (e.isInteractive) void refresh($)
@@ -662,7 +665,7 @@ export const register: Register = on => {
               ▸ legacy & compat ({lay.legacy.all.length})
             </Button>
           ) : null}
-          {catalog.isJudging ? <Text dimColor>Opus is sorting the commands…</Text> : null}
+          {catalog.isJudging ? <Text dimColor>Sorting the commands…</Text> : null}
         </Box>
       </Box>
     )

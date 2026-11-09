@@ -2,5 +2,18 @@
   "name": "slash-menu",
   "version": "0.1.0",
   "description": "Replaces the / command list with a grouped menu above the prompt, with descriptions beside it",
-  "types": "./types/index.d.ts"
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "judgeModel": {
+      "type": "string",
+      "title": "Sorting model",
+      "description": "Model that groups and ranks the commands",
+      "default": "sonnet",
+      "options": [
+        "sonnet",
+        "haiku",
+        "opus"
+      ]
+    }
+  }
 }
