@@ -77,7 +77,7 @@ mkdir -p foo/.config/foo && $EDITOR foo/.config/foo/foo.conf
 - Oh My Posh's git segment fields are `.Working` and `.Staging` (not `.Staged`); a wrong field prints "unable to create text based on template".
 - Ghostty themes from base16 sources define palette slots 16–21; delete those lines, or the 256-colour table breaks (colour 16 turns red).
 - A tmux server keeps the environment (`PATH`, `SSH_AUTH_SOCK`, `TERM_PROGRAM`) of the terminal that started it; restart it after shell changes. `tmux source-file` does not remove old bindings.
-- Never start `ssh-agent` from a shell rc on macOS; the launchd agent plus `AddKeysToAgent yes` in `~/.ssh/config` covers it.
+- Never start `ssh-agent` from a shell rc on macOS; the launchd agent plus `AddKeysToAgent yes` in `~/.ssh/config` covers it. The launchd agent starts empty after login, so commit signing fails until the first `ssh`; `.zprofile` loads the keychain keys when the agent is empty.
 - macOS maps Ctrl+Option+Return to window Fill before Ghostty sees it; Ghostty uses `ctrl+alt+enter=toggle_maximize`.
 - Homebrew font casks sometimes fail with 504; `scripts/install.sh` falls back to `gh release download -R kuskhan/jetendard`.
 - To test Ghostty, open a separate instance (`open -na Ghostty.app --args --quit-after-last-window-closed=true -e <script>`); never quit Ghostty via AppleScript. `--font-family=` resets before adding a font.

@@ -8,6 +8,9 @@ if [[ $OSTYPE == darwin* ]]; then
     $path
   )
   source ~/.orbstack/shell/init.zsh 2>/dev/null || :
+  # Load SSH keys from the keychain when the launchd agent is running but empty
+  ssh-add -l >/dev/null 2>&1
+  (( $? == 1 )) && ssh-add --apple-load-keychain -q 2>/dev/null
 fi
 
 # Keep user-local binaries first
