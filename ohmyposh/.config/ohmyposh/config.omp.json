@@ -17,7 +17,7 @@
           "style": "plain",
           "foreground": "#98b0e0",
           "template": "{{ .Path }}",
-          "properties": { "style": "folder", "home_icon": "~" }
+          "properties": { "style": "full", "home_icon": "~" }
         },
         {
           "type": "git",
