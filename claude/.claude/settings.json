@@ -4,7 +4,7 @@
     "pr": ""
   },
   "permissions": {
-    "defaultMode": "auto"
+    "defaultMode": "bypassPermissions"
   },
   "statusLine": {
     "type": "command",
@@ -25,5 +25,8 @@
   "env": {
     "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet",
     "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/slash-menu"
-  }
+  },
+  "switchModelsOnFlag": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true
 }
