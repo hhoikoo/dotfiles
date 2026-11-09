@@ -69,5 +69,8 @@ if [[ $OSTYPE == darwin* ]]; then
   unset _brew_gcc
 fi
 
+# Per-machine settings, not in the repo (optional)
+[[ -r ~/.config/zsh/local.zsh ]] && source ~/.config/zsh/local.zsh
+
 # Prompt
 eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/config.omp.json)"
