@@ -59,7 +59,6 @@ alias top=btop
 alias vim=nvim
 alias vi=nvim
 alias lg=lazygit
-alias tm='tmux new-session -A -s main'
 
 # macOS only: point gcc/g++ at the newest Homebrew GCC
 if [[ $OSTYPE == darwin* ]]; then
