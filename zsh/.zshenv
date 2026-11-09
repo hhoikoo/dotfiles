@@ -4,6 +4,9 @@ export DOTFILES="${DOTFILES:-$HOME/.dotfiles}"
 export LANG="${LANG:-en_US.UTF-8}"
 export EDITOR=nvim
 
+# bat and delta use the terminal's 16-colour palette (Ghostty jellybeans-hc)
+export BAT_THEME="${BAT_THEME:-ansi}"
+
 # Put user-local binaries first on PATH (no duplicates)
 typeset -U path
 path=("$HOME/.local/bin" $path)
