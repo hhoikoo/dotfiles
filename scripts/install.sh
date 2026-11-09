@@ -100,6 +100,12 @@ else
       sudo apt-get install -y "${APT_PKGS[@]}"
       log "done" "apt packages installed"
     fi
+    if id -nG "$USER" | tr ' ' '\n' | grep -qx docker; then
+      log skip "$USER in docker group"
+    else
+      sudo usermod -aG docker "$USER"
+      log "done" "$USER added to docker group (reconnect to use docker without sudo)"
+    fi
   else
     if brew bundle check --file "$REPO/packages/Brewfile" >/dev/null 2>&1; then
       log skip "brew bundle satisfied"

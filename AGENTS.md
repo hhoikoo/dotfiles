@@ -37,6 +37,7 @@ One owner per tool. Never install a tool via a second manager.
 | Tool | Owner |
 |---|---|
 | Most CLI tools | apt (Linux), brew (Mac) |
+| Docker, Compose v2 | apt `docker.io`, `docker-compose-v2` (Linux), OrbStack cask (Mac) |
 | node, pnpm | mise (all hosts) |
 | neovim, tree-sitter, gh, yq | mise on Linux, brew on Mac |
 | python | uv (astral script, all hosts) |

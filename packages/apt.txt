@@ -8,6 +8,11 @@ ca-certificates
 unzip
 build-essential
 
+# Containers (Mac uses OrbStack from the Brewfile)
+docker.io
+docker-compose-v2
+docker-buildx
+
 # CLI tools
 fzf
 zoxide
