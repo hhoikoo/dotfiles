@@ -8,6 +8,11 @@
       "alignment": "left",
       "segments": [
         {
+          "type": "session",
+          "style": "plain",
+          "template": "{{ if .SSHSession }}{{ if .Root }}<#ff5050>{{ .UserName }}</>{{ else }}<#c0d880>{{ .UserName }}</>{{ end }}<#909090>@</><#e090e0>{{ splitList \".\" .HostName | first }}</><#909090>:</>{{ end }}"
+        },
+        {
           "type": "path",
           "style": "plain",
           "foreground": "#98b0e0",
