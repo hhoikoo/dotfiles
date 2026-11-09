@@ -2,7 +2,7 @@
 	defaultBranch = main
 [core]
 	editor = nvim
-	pager = delta
+	pager = delta-auto
 	autocrlf = input
 	eol = lf
 [color]

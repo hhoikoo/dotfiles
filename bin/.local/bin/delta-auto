@@ -1,0 +1,26 @@
+#!/bin/sh
+# Git pager: delta, side-by-side when the terminal is wide enough.
+# Threshold is DELTA_SIDE_BY_SIDE_MIN_COLS columns (default 160).
+# Falls back to plain delta if the width cannot be determined.
+# Not used for interactive.diffFilter (side-by-side breaks git add -p).
+#
+# Usage: delta-auto [DELTA_ARGS...]
+
+min=${DELTA_SIDE_BY_SIDE_MIN_COLS:-160}
+
+cols=$(tput cols 2>/dev/null) || cols=
+case $cols in
+  '' | *[!0-9]*) cols=$(stty size </dev/tty 2>/dev/null | cut -d' ' -f2) ;;
+esac
+case $cols in
+  '' | *[!0-9]*) cols=${COLUMNS:-} ;;
+esac
+
+case $cols in
+  '' | *[!0-9]*) exec delta "$@" ;;
+esac
+
+if [ "$cols" -ge "$min" ]; then
+  exec delta --side-by-side "$@"
+fi
+exec delta "$@"
