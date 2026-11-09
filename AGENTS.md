@@ -21,6 +21,7 @@ time zsh -i -c exit                          # shell startup time; keep under 10
 - `tmux/` shared tmux config; sources the untracked per-machine `~/.config/tmux/local.conf`
 - `git/` `~/.config/git/{config,ignore}`; identity lives in untracked `local`
 - `mise/` global mise tools; `ohmyposh/` prompt; `nvim/` Neovim config
+- `fd/` `~/.config/fd/ignore`, global fd ignore list (caches, `~/Library`) that keeps fzf Ctrl-T/Alt-C usable from `~`
 - `bin/` scripts for `~/.local/bin`
 - `claude/` `~/.claude` user files and the `dotfiles` skill; other skills and mods live in the `work` and `slash-menu` plugins of github.com/hhoikoo/agent-marketplace (marketplace `hhoikoo`, declared in `settings.json`, installed for Claude Code and Codex by `scripts/install.sh` step 7); `codex/` `~/.codex/AGENTS.md` (symlink to `claude/.claude/CLAUDE.md`, the global instructions for both)
 - `ghostty/` (Mac only) terminal config and theme

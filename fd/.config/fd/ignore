@@ -1,0 +1,18 @@
+# Global fd ignore (gitignore syntax); bypass with `fd -u`
+Library/
+.cache/
+.local/share/
+.npm/
+.cargo/
+.rustup/
+.pyenv/
+.antidote/
+.Trash/
+node_modules/
+.venv/
+.vscode/extensions/
+.kube/cache/
+.local/state/
+.codex/.tmp/
+.claude/projects/
+.claude/plugins/
