@@ -40,6 +40,9 @@ bindkey "^[[B" history-substring-search-down
 
 # Tool integrations
 eval "$(mise activate zsh)"
+# fzf walks with fd (global ignore list in ~/.config/fd/ignore) instead of its built-in walker
+export FZF_CTRL_T_COMMAND='fd --type f --type d --hidden --follow --exclude .git'
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
 # fzf key bindings need a terminal on stdin
 [[ -t 0 ]] && source <(fzf --zsh)
 eval "$(zoxide init zsh --cmd cd)"
