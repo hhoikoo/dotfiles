@@ -1,10 +1,13 @@
 {
   "agentPushNotifEnabled": true,
+  "askUserQuestionTimeout": "10m",
   "attribution": {
     "commit": "",
     "pr": ""
   },
+  "autoContinueAtUsageLimit": true,
   "awaySummaryEnabled": false,
+  "editorMode": "normal",
   "effortLevel": "high",
   "enabledPlugins": {
     "cc-plugin-diff@builtin": false,
@@ -15,11 +18,24 @@
     "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/slash-menu",
     "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
   },
+  "feedbackDrafts": "off",
+  "idleCompaction": false,
   "permissions": {
     "defaultMode": "bypassPermissions"
   },
+  "preferredNotifChannel": "auto",
   "promptSuggestionEnabled": false,
   "remoteControlAtStartup": false,
+  "skillOverrides": {
+    "anthropic-skills:docs": "off",
+    "anthropic-skills:docx": "off",
+    "anthropic-skills:google-workspace": "off",
+    "anthropic-skills:import-memory": "off",
+    "anthropic-skills:morning": "off",
+    "anthropic-skills:pdf": "off",
+    "anthropic-skills:pptx": "off",
+    "anthropic-skills:xlsx": "off"
+  },
   "skipAutoPermissionPrompt": true,
   "skipDangerousModePermissionPrompt": true,
   "statusLine": {
@@ -28,5 +44,10 @@
   },
   "switchModelsOnFlag": true,
   "theme": "auto",
-  "tui": "fullscreen"
+  "timeFormat": "24-hour",
+  "tui": "fullscreen",
+  "workflowKeywordTriggerEnabled": false,
+  "worktree": {
+    "baseRef": "fresh"
+  }
 }
