@@ -63,6 +63,25 @@ do
 
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
+  -- One persistent terminal per instance: open at the bottom, hide if visible, reopen if hidden
+  local term_buf
+  vim.keymap.set('n', '<leader>tt', function()
+    if term_buf and vim.api.nvim_buf_is_valid(term_buf) then
+      local win = vim.fn.win_findbuf(term_buf)[1]
+      if win and vim.api.nvim_win_get_tabpage(win) == vim.api.nvim_get_current_tabpage() then
+        if #vim.api.nvim_tabpage_list_wins(0) > 1 then vim.api.nvim_win_hide(win) end
+        return
+      end
+      vim.cmd('botright sbuffer ' .. term_buf)
+    else
+      vim.cmd 'botright new'
+      vim.cmd.terminal()
+      term_buf = vim.api.nvim_get_current_buf()
+    end
+    vim.cmd.resize(math.max(15, math.floor(vim.o.lines * 0.3)))
+    vim.cmd.startinsert()
+  end, { desc = '[T]oggle [T]erminal' })
+
   -- Window navigation
   vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
   vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
