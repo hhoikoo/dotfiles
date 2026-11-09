@@ -23,6 +23,12 @@
 [credential "https://gist.github.com"]
 	helper =
 	helper = !gh auth git-credential
+# Git LFS: what `git lfs install` would write here (it would edit this tracked file)
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
 # Never guess an identity; it comes from the untracked local file
 [user]
 	useConfigOnly = true
