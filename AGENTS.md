@@ -85,6 +85,10 @@ mkdir -p foo/.config/foo && $EDITOR foo/.config/foo/foo.conf
 - To test Ghostty, open a separate instance (`open -na Ghostty.app --args --quit-after-last-window-closed=true -e <script>`); never quit Ghostty via AppleScript. `--font-family=` resets before adding a font.
 - In zsh, `path` is tied to `$PATH`: never use it as a variable name.
 
+## Commits
+
+One signed commit per topic with a plain imperative subject (e.g. `Add keep-awake to block sleep with caffeinate`); no Conventional Commits prefixes, no squashing.
+
 ## Boundaries
 
 Always:
