@@ -88,4 +88,13 @@ fi
 ms="$(perl -MTime::HiRes=time -e '$t=time; system("zsh -i -c exit >/dev/null 2>&1"); printf "%d", (time-$t)*1000')"
 pass "zsh startup: ${ms} ms"
 
+# 7. macOS: Touch ID for sudo, including inside tmux
+if [[ $OS == Darwin ]]; then
+  if grep -q pam_reattach /etc/pam.d/sudo_local 2>/dev/null && grep -Eq '^auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so' /etc/pam.d/sudo_local; then
+    pass "Touch ID for sudo (pam_reattach + pam_tid)"
+  else
+    bad "Touch ID for sudo is not set up; run make link"
+  fi
+fi
+
 exit "$fail"

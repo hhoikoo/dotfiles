@@ -261,8 +261,34 @@ else
   log skip "plugin bundle"
 fi
 
-# --------------------------------------------------------- 8. Git identity
-step "8. Git identity"
+# ------------------------------------------------- 8. Touch ID for sudo
+step "8. Touch ID for sudo"
+PAM_LOCAL=/etc/pam.d/sudo_local
+PAM_REATTACH=/opt/homebrew/lib/pam/pam_reattach.so
+if [[ $OS != Darwin ]]; then
+  log skip "not macOS"
+elif grep -q pam_reattach "$PAM_LOCAL" 2>/dev/null; then
+  log skip "$PAM_LOCAL has pam_reattach"
+elif [[ ! -f $PAM_REATTACH ]]; then
+  warn "pam-reattach is missing; skipping Touch ID for sudo"
+else
+  # pam_reattach rejoins the GUI session so pam_tid works inside tmux; other lines are kept
+  pam_new="$( { cat "$PAM_LOCAL" 2>/dev/null || true; } | awk -v reattach="auth       optional       $PAM_REATTACH ignore_ssh" '
+    /^#?[[:space:]]*auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so/ { print reattach; print "auth       sufficient     pam_tid.so"; done = 1; next }
+    { print }
+    END { if (!done) { print reattach; print "auth       sufficient     pam_tid.so" } }
+  ')"
+  echo "sudo is needed once to write $PAM_LOCAL"
+  if printf '%s\n' "$pam_new" | sudo tee "$PAM_LOCAL" >/dev/null; then
+    log "done" "Touch ID for sudo, including inside tmux"
+  else
+    warn "could not write $PAM_LOCAL"
+  fi
+  sudo -k
+fi
+
+# --------------------------------------------------------- 9. Git identity
+step "9. Git identity"
 GIT_LOCAL="$HOME/.config/git/local"
 if [[ -e $GIT_LOCAL ]]; then
   log skip "$GIT_LOCAL exists"
@@ -306,8 +332,8 @@ else
   fi
 fi
 
-# ---------------------------------------------------------- 9. Login shell
-step "9. Login shell"
+# --------------------------------------------------------- 10. Login shell
+step "10. Login shell"
 if [[ $OS == Linux ]]; then
   current="$(getent passwd "$USER" | cut -d: -f7)"
   if [[ $current == */zsh ]]; then
@@ -325,9 +351,9 @@ else
   fi
 fi
 
-# ------------------------------------------------- 10. Mac migration notice
+# ------------------------------------------------- 11. Mac migration notice
 if [[ $OS == Darwin ]]; then
-  step "10. Mac migration"
+  step "11. Mac migration"
   legacy=()
   for p in "$HOME/.oh-my-zsh" "$HOME/.nvm" "$HOME/.p10k.zsh" "$HOME/Library/pnpm"; do
     [[ -e $p ]] && legacy+=("$p")
@@ -342,6 +368,6 @@ if [[ $OS == Darwin ]]; then
   fi
 fi
 
-# --------------------------------------------------------------- 11. Verify
-step "11. Verify"
+# --------------------------------------------------------------- 12. Verify
+step "12. Verify"
 "$REPO/scripts/verify.sh"

@@ -78,6 +78,7 @@ mkdir -p foo/.config/foo && $EDITOR foo/.config/foo/foo.conf
 - Ghostty themes from base16 sources define palette slots 16–21; delete those lines, or the 256-colour table breaks (colour 16 turns red).
 - A tmux server keeps the environment (`PATH`, `SSH_AUTH_SOCK`, `TERM_PROGRAM`) of the terminal that started it; restart it after shell changes. `tmux source-file` does not remove old bindings.
 - Never start `ssh-agent` from a shell rc on macOS; the launchd agent plus `AddKeysToAgent yes` in `~/.ssh/config` covers it. The launchd agent starts empty after login, so commit signing fails until the first `ssh`; `.zprofile` loads the keychain keys when the agent is empty.
+- Touch ID for `sudo` fails inside tmux (the server is outside the GUI session). `scripts/install.sh` step 8 adds `auth optional /opt/homebrew/lib/pam/pam_reattach.so ignore_ssh` above `auth sufficient pam_tid.so` in `/etc/pam.d/sudo_local`, using sudo for that one write only.
 - macOS maps Ctrl+Option+Return to window Fill before Ghostty sees it; Ghostty uses `ctrl+alt+enter=toggle_maximize`.
 - Homebrew font casks sometimes fail with 504; `scripts/install.sh` falls back to `gh release download -R kuskhan/jetendard`.
 - To test Ghostty, open a separate instance (`open -na Ghostty.app --args --quit-after-last-window-closed=true -e <script>`); never quit Ghostty via AppleScript. `--font-family=` resets before adding a font.
@@ -97,5 +98,5 @@ Ask first:
 Never:
 - Commit `~/.claude.json`, credentials, `settings.local.json`, or Claude/Codex state.
 - Put a name, email or signing key in the tracked git config.
-- Run sudo on the Mac (print the command instead).
+- Run sudo on the Mac yourself (print the command instead). The only sudo on the Mac is the `sudo_local` write in `scripts/install.sh` step 8, which the user runs.
 - Add auto-update hooks.

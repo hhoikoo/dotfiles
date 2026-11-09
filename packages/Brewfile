@@ -28,6 +28,7 @@ brew "just"
 brew "wget"
 brew "tree"
 brew "oh-my-posh"
+brew "pam-reattach"
 
 # Containers and Kubernetes
 brew "kubernetes-cli"
