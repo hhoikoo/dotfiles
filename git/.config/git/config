@@ -13,6 +13,15 @@
 	navigate = true
 [merge]
 	conflictStyle = zdiff3
+[pull]
+	rebase = true
+# GitHub HTTPS auth through the gh CLI
+[credential "https://github.com"]
+	helper =
+	helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !gh auth git-credential
 # Never guess an identity; it comes from the untracked local file
 [user]
 	useConfigOnly = true
