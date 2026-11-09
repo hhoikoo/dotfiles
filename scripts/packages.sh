@@ -4,5 +4,5 @@
 set -euo pipefail
 
 printf '%s\n' zsh tmux git mise ohmyposh nvim bin claude codex
-[[ $(uname -s) == Darwin ]] && printf '%s\n' ghostty tmux-mac
+[[ $(uname -s) == Darwin ]] && printf '%s\n' ghostty
 exit 0

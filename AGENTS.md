@@ -18,13 +18,12 @@ time zsh -i -c exit                          # shell startup time; keep under 10
 ## Layout
 
 - `zsh/` `.zshenv` `.zprofile` `.zshrc` `.zsh_plugins.txt` (macOS bits behind `$OSTYPE == darwin*`)
-- `tmux/` shared tmux config; sources `~/.config/tmux/mac.conf`, then the untracked per-machine `~/.config/tmux/local.conf`
+- `tmux/` shared tmux config; sources the untracked per-machine `~/.config/tmux/local.conf`
 - `git/` `~/.config/git/{config,ignore}`; identity lives in untracked `local`
 - `mise/` global mise tools; `ohmyposh/` prompt; `nvim/` Neovim config
 - `bin/` scripts for `~/.local/bin`
 - `claude/` `~/.claude` user files, the `dotfiles` skill, and `mods/` (Claude Code function-hook plugins, loaded in every session via `CLAUDE_CODE_PLUGIN_DIRS` in `settings.json`; add a mod's folder there, path-list separated); `codex/` `~/.codex/AGENTS.md` (symlink to `claude/.claude/CLAUDE.md`, the global instructions for both)
 - `ghostty/` (Mac only) terminal config and theme
-- `tmux-mac/` (Mac only) `~/.config/tmux/mac.conf`
 - `packages/apt.txt`, `packages/Brewfile` system packages
 - `Makefile` day-to-day targets; `scripts/` `bootstrap.sh` (curl-able entry point), `scripts/install.sh`, `verify.sh`, `packages.sh` (stow package list)
 
