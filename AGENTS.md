@@ -22,7 +22,7 @@ time zsh -i -c exit                          # shell startup time; keep under 10
 - `git/` `~/.config/git/{config,ignore}`; identity lives in untracked `local`
 - `mise/` global mise tools; `ohmyposh/` prompt; `nvim/` Neovim config
 - `bin/` scripts for `~/.local/bin`
-- `claude/` `~/.claude` user files, the `dotfiles` skill, and `mods/` (Claude Code function-hook plugins, loaded in every session via `CLAUDE_CODE_PLUGIN_DIRS` in `settings.json`; add a mod's folder there, path-list separated); `codex/` `~/.codex/AGENTS.md` (symlink to `claude/.claude/CLAUDE.md`, the global instructions for both)
+- `claude/` `~/.claude` user files and the `dotfiles` skill; other skills and mods live in the `work` and `slash-menu` plugins of github.com/hhoikoo/agent-marketplace (marketplace `hhoikoo`, declared in `settings.json`, installed for Claude Code and Codex by `scripts/install.sh` step 7); `codex/` `~/.codex/AGENTS.md` (symlink to `claude/.claude/CLAUDE.md`, the global instructions for both)
 - `ghostty/` (Mac only) terminal config and theme
 - `packages/apt.txt`, `packages/Brewfile` system packages
 - `Makefile` day-to-day targets; `scripts/` `bootstrap.sh` (curl-able entry point), `scripts/install.sh`, `verify.sh`, `packages.sh` (stow package list)

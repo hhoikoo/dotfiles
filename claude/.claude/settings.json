@@ -12,11 +12,21 @@
   "enabledPlugins": {
     "cc-plugin-diff@builtin": false,
     "cc-plugin-telemetry@builtin": false,
-    "cc-plugin-you-should-know@builtin": true
+    "cc-plugin-you-should-know@builtin": true,
+    "slash-menu@hhoikoo": true,
+    "work@hhoikoo": true
   },
   "env": {
-    "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/slash-menu",
     "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
+  },
+  "extraKnownMarketplaces": {
+    "hhoikoo": {
+      "autoUpdate": true,
+      "source": {
+        "repo": "hhoikoo/agent-marketplace",
+        "source": "github"
+      }
+    }
   },
   "feedbackDrafts": "off",
   "idleCompaction": false,

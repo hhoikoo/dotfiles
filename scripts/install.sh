@@ -271,6 +271,45 @@ if have zsh && [[ ! -s $HOME/.zsh_plugins.zsh ]]; then
 else
   log skip "plugin bundle"
 fi
+# Agent plugins from github.com/hhoikoo/agent-marketplace (marketplace name: hhoikoo)
+MARKETPLACE_REPO=hhoikoo/agent-marketplace
+if have claude; then
+  if claude plugin marketplace list 2>/dev/null | grep -q '❯ hhoikoo$'; then
+    log skip "claude marketplace hhoikoo"
+  elif claude plugin marketplace add "$MARKETPLACE_REPO" >/dev/null; then
+    # marketplace add rewrites the settings entry without autoUpdate
+    settings="$REPO/claude/.claude/settings.json"
+    jq '.extraKnownMarketplaces.hhoikoo.autoUpdate = true' "$settings" >"$settings.tmp" && mv "$settings.tmp" "$settings"
+    log "done" "claude marketplace hhoikoo"
+  else
+    warn "claude plugin marketplace add $MARKETPLACE_REPO failed"
+  fi
+  for plugin in work slash-menu; do
+    if claude plugin list 2>/dev/null | grep -q "❯ $plugin@hhoikoo$"; then
+      log skip "claude plugin $plugin"
+    elif claude plugin install "$plugin@hhoikoo" >/dev/null; then
+      log "done" "claude plugin $plugin"
+    else
+      warn "claude plugin install $plugin@hhoikoo failed"
+    fi
+  done
+fi
+if have codex; then
+  if codex plugin marketplace list 2>/dev/null | grep -q '^hhoikoo '; then
+    log skip "codex marketplace hhoikoo"
+  elif codex plugin marketplace add "$MARKETPLACE_REPO" >/dev/null; then
+    log "done" "codex marketplace hhoikoo"
+  else
+    warn "codex plugin marketplace add $MARKETPLACE_REPO failed"
+  fi
+  if codex plugin list 2>/dev/null | grep -q '^work@hhoikoo .*installed'; then
+    log skip "codex plugin work"
+  elif codex plugin add work@hhoikoo >/dev/null; then
+    log "done" "codex plugin work"
+  else
+    warn "codex plugin add work@hhoikoo failed"
+  fi
+fi
 
 # ------------------------------------------------- 8. Touch ID for sudo
 step "8. Touch ID for sudo"
