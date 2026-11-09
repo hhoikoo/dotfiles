@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Prevent idle system sleep while running. Display sleep is still allowed
+# unless --display is given.
+# --lid also prevents lid-close sleep (including on battery, requires sudo).
+# --display also keeps the display on.
+# Optional DURATION (e.g. 1h, 30m, 7200) auto-stops via timeout(1).
+# Ctrl+C cleanly stops it.
+# macOS only (caffeinate). No-ops on other platforms.
+#
+# Usage: keep-awake [--lid] [--display] [DURATION]
+
+if ! command -v caffeinate >/dev/null 2>&1; then
+  echo "keep-awake: caffeinate not found (macOS only)" >&2
+  exit 1
+fi
+
+lid_mode=0
+display_mode=0
+
+cleanup() {
+  trap - EXIT HUP INT TERM
+  if [ "$lid_mode" -eq 1 ]; then
+    # -n avoids a cleanup-time password prompt. sudo -v below keeps the
+    # credential warm for a normal exit; the root watchdog covers crashes.
+    sudo -n pmset -a disablesleep 0 || {
+      echo "keep-awake: WARNING: could not re-enable sleep; run:" >&2
+      echo "  sudo pmset -a disablesleep 0" >&2
+    }
+  fi
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --lid) lid_mode=1 ;;
+    --display) display_mode=1 ;;
+    *) break ;;
+  esac
+  shift
+done
+
+if [ "$lid_mode" -eq 1 ]; then
+  sudo -n pmset -a disablesleep 1 || sudo pmset -a disablesleep 1
+  trap cleanup EXIT HUP INT TERM
+fi
+
+duration="${1:-}"
+if [ -n "$duration" ] && ! command -v timeout >/dev/null 2>&1; then
+  echo "keep-awake: timeout(1) not found (brew install coreutils)" >&2
+  exit 1
+fi
+
+if [ "$lid_mode" -eq 1 ]; then
+  mode="lid+idle sleep"
+else
+  mode="idle sleep"
+fi
+
+caffeinate_flags=(-i)
+if [ "$display_mode" -eq 1 ]; then
+  caffeinate_flags+=(-d)
+  mode="$mode and display sleep"
+  display_note=""
+else
+  display_note="; display sleep allowed"
+fi
+
+echo "keep-awake: $mode blocked${duration:+ for $duration}${display_note} (Ctrl+C to stop)"
+if [ -n "$duration" ]; then
+  timeout --foreground "$duration" caffeinate "${caffeinate_flags[@]}" &
+else
+  caffeinate "${caffeinate_flags[@]}" &
+fi
+worker_pid=$!
+
+if [ "$lid_mode" -eq 1 ]; then
+  # EXIT traps cannot handle SIGKILL. This watchdog stops the orphaned worker
+  # and restores the global setting if this script disappears unexpectedly.
+  /bin/sh -c '
+    parent_pid=$1
+    worker_pid=$2
+    while kill -0 "$parent_pid" 2>/dev/null; do sleep 1; done
+    kill "$worker_pid" 2>/dev/null || true
+    sudo -n pmset -a disablesleep 0 || true
+  ' keep-awake-watchdog "$$" "$worker_pid" &
+fi
+
+wait "$worker_pid"
