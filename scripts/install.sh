@@ -14,7 +14,7 @@ Environment:
   DOTFILES    Repo location (default: ~/.dotfiles)
   GIT_NAME    Git user.name for ~/.config/git/local
   GIT_EMAIL   Git user.email for ~/.config/git/local
-  GIT_SIGN    1 to set up SSH commit signing, 0 to skip it
+  GIT_SIGN    1 to set up SSH commit signing, 0 to decline it for good (asked once when unset)
 EOF
 }
 
@@ -345,12 +345,10 @@ if [[ -e $GIT_LOCAL ]]; then
 else
   name="${GIT_NAME:-}"
   email="${GIT_EMAIL:-}"
-  prompted=0
   if [[ -z $name || -z $email ]]; then
     if tty_usable; then
       [[ -n $name ]] || { ask "Git name: "; name="$REPLY"; }
       [[ -n $email ]] || { ask "Git email: "; email="$REPLY"; }
-      prompted=1
     fi
   fi
   if [[ -z $name || -z $email ]]; then
@@ -359,26 +357,56 @@ else
     git config --file "$GIT_LOCAL" user.name "$name"
     git config --file "$GIT_LOCAL" user.email "$email"
     log "done" "git identity: $name <$email>"
+  fi
+fi
 
+# ------------------------------------------------------ 9b. Commit signing
+# commit.gpgSign in local: unset = undecided, false = declined, true = enabled
+step "9b. Commit signing"
+SIGNERS="$HOME/.config/git/allowed_signers"
+email="$(git config --file "$GIT_LOCAL" user.email 2>/dev/null || true)"
+if [[ -z $email ]]; then
+  log skip "no git identity"
+else
+  state="$(git config --file "$GIT_LOCAL" --type=bool commit.gpgSign 2>/dev/null || true)"
+  if [[ -z $state ]]; then
     sign="${GIT_SIGN:-}"
-    if [[ -z $sign && $prompted == 1 ]]; then
+    if [[ -z $sign ]] && tty_usable; then
       ask "Sign commits with an SSH key from ssh-agent? [y/N] "
-      [[ $REPLY =~ ^[Yy] ]] && sign=1
+      if [[ $REPLY =~ ^[Yy] ]]; then sign=1; else sign=0; fi
     fi
-    if [[ $sign == 1 ]]; then
-      pub="$( (ssh-add -L 2>/dev/null || true) | grep -m1 ed25519 | awk '{print $1" "$2}' || true)"
-      if [[ -z $pub ]]; then
-        warn "no ed25519 key in ssh-agent; skipping signing"
-      else
-        git config --file "$GIT_LOCAL" user.signingKey "key::$pub"
-        git config --file "$GIT_LOCAL" commit.gpgSign true
-        git config --file "$GIT_LOCAL" tag.gpgSign true
-        printf '%s namespaces="git" %s\n' "$email" "$pub" >"$HOME/.config/git/allowed_signers"
-        log "done" "SSH signing enabled"
-      fi
+    case $sign in
+      1)
+        pub="$( (ssh-add -L 2>/dev/null || true) | grep -m1 ed25519 | awk '{print $1" "$2}' || true)"
+        if [[ -z $pub ]]; then
+          warn "no ed25519 key in ssh-agent; leaving signing undecided"
+        else
+          git config --file "$GIT_LOCAL" user.signingKey "key::$pub"
+          git config --file "$GIT_LOCAL" commit.gpgSign true
+          git config --file "$GIT_LOCAL" tag.gpgSign true
+          printf '%s namespaces="git" %s\n' "$email" "$pub" >"$SIGNERS"
+          log "done" "SSH signing enabled"
+        fi
+        ;;
+      0)
+        git config --file "$GIT_LOCAL" commit.gpgSign false
+        log "done" "SSH signing declined"
+        ;;
+      *) log skip "SSH signing undecided (set GIT_SIGN=1 or 0)" ;;
+    esac
+  elif [[ $state == true ]]; then
+    key="$(git config --file "$GIT_LOCAL" user.signingKey 2>/dev/null || true)"
+    pub="${key#key::}"
+    if [[ -z $key || $pub == "$key" ]]; then
+      warn "commit.gpgSign is true but user.signingKey is not a key:: value; fix $GIT_LOCAL"
+    elif grep -qF "$email namespaces=\"git\" $pub" "$SIGNERS" 2>/dev/null; then
+      log skip "SSH signing enabled; allowed_signers ok"
     else
-      log skip "SSH signing"
+      printf '%s namespaces="git" %s\n' "$email" "$pub" >"$SIGNERS"
+      log "done" "allowed_signers rewritten"
     fi
+  else
+    log skip "SSH signing declined"
   fi
 fi
 

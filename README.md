@@ -23,7 +23,7 @@ Run `make` in `~/.dotfiles`.
 ## Environment
 
 - `GIT_NAME`, `GIT_EMAIL`: git identity, skips the prompt
-- `GIT_SIGN=1`: enable SSH commit signing
+- `GIT_SIGN`: `1` enables SSH commit signing, `0` declines it for good; unset asks once on a terminal
 - `DOTFILES`: repo location (default `~/.dotfiles`)
 - `DOTFILES_REF`: branch or tag that bootstrap clones (default `main`)
 
