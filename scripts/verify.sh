@@ -110,12 +110,19 @@ sign="$(git config --includes --type=bool commit.gpgsign 2>/dev/null || true)"
 if [[ $sign == true ]]; then
   key="$(git config --includes user.signingkey 2>/dev/null || true)"
   pub="${key#key::}"
+  keyfile=""
+  if [[ $pub == "$key" && -f ${key%.pub}.pub ]]; then
+    keyfile="$key"
+    pub="$(awk '{print $1" "$2}' "${key%.pub}.pub")"
+  fi
   signers="$(git config --includes gpg.ssh.allowedSignersFile 2>/dev/null || true)"
   signers="${signers/#\~/$HOME}"
   if [[ -z $key || $pub == "$key" ]]; then
-    bad "commit signing: user.signingkey is not set to a key:: value"
+    bad "commit signing: user.signingkey is neither a key:: value nor a key file"
   elif [[ -z $signers || ! -f $signers ]] || ! grep -qF "$pub" "$signers"; then
     bad "commit signing: allowed_signers is missing or lacks the signing key; run make link"
+  elif [[ -n $keyfile ]]; then
+    pass "commit signing: key file $keyfile in allowed_signers"
   elif (ssh-add -L 2>/dev/null || true) | grep -qF "$pub"; then
     pass "commit signing: key in allowed_signers and loaded in ssh-agent"
   else

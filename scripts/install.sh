@@ -397,8 +397,12 @@ else
   elif [[ $state == true ]]; then
     key="$(git config --file "$GIT_LOCAL" user.signingKey 2>/dev/null || true)"
     pub="${key#key::}"
+    # A key file (machine-local key, no agent needed) is also accepted
+    if [[ $pub == "$key" && -f ${key%.pub}.pub ]]; then
+      pub="$(awk '{print $1" "$2}' "${key%.pub}.pub")"
+    fi
     if [[ -z $key || $pub == "$key" ]]; then
-      warn "commit.gpgSign is true but user.signingKey is not a key:: value; fix $GIT_LOCAL"
+      warn "commit.gpgSign is true but user.signingKey is neither a key:: value nor a key file; fix $GIT_LOCAL"
     elif grep -qF "$email namespaces=\"git\" $pub" "$SIGNERS" 2>/dev/null; then
       log skip "SSH signing enabled; allowed_signers ok"
     else
