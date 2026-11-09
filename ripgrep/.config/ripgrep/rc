@@ -1,0 +1,4 @@
+# Global ripgrep config (read via RIPGREP_CONFIG_PATH in .zshenv); bypass with `rg --no-config`
+--hidden
+--glob=!.git/
+--smart-case
