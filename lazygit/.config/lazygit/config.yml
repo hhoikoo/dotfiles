@@ -1,0 +1,20 @@
+# lazygit config; .zshenv points LG_CONFIG_FILE here so macOS and Linux share it.
+# Only keys that differ from the defaults (`lazygit --config`).
+gui:
+  nerdFontsVersion: "3"
+  # jellybeans-hc, same as tmux pane-active-border and mode-style
+  theme:
+    activeBorderColor: ["#98b0e0", bold]
+    selectedLineBgColor: ["#303030"]
+  showRandomTip: false
+  showNumstatInFilesView: true
+  showDivergenceFromBaseBranch: arrowAndNumber
+disableStartupPopups: true
+update:
+  method: never # brew owns lazygit
+os:
+  editPreset: nvim
+git:
+  overrideGpg: true # SSH signing via the agent, no prompt
+  diffRenderers:
+    - command: delta --{{colorScheme}} --paging=never
