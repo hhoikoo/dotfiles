@@ -9,6 +9,7 @@ OS="$(uname -s)"
 fail=0
 
 pass() { printf 'ok    %s\n' "$1"; }
+warn() { printf 'warn  %s\n' "$1"; }
 bad()  { printf 'FAIL  %s\n' "$1"; fail=1; }
 
 # Which owner provides each path: mise installs and shims count as one owner
@@ -102,6 +103,28 @@ if [[ $(git -C "$REPO" config --get filter.claude-settings.clean 2>/dev/null) ==
   pass "git filter claude-settings"
 else
   bad "git filter claude-settings missing; run make link"
+fi
+
+# 9. Commit signing (commit.gpgsign: true = on, false = declined, unset = undecided)
+sign="$(git config --includes --type=bool commit.gpgsign 2>/dev/null || true)"
+if [[ $sign == true ]]; then
+  key="$(git config --includes user.signingkey 2>/dev/null || true)"
+  pub="${key#key::}"
+  signers="$(git config --includes gpg.ssh.allowedSignersFile 2>/dev/null || true)"
+  signers="${signers/#\~/$HOME}"
+  if [[ -z $key || $pub == "$key" ]]; then
+    bad "commit signing: user.signingkey is not set to a key:: value"
+  elif [[ -z $signers || ! -f $signers ]] || ! grep -qF "$pub" "$signers"; then
+    bad "commit signing: allowed_signers is missing or lacks the signing key; run make link"
+  elif (ssh-add -L 2>/dev/null || true) | grep -qF "$pub"; then
+    pass "commit signing: key in allowed_signers and loaded in ssh-agent"
+  else
+    warn "commit signing: key not loaded in ssh-agent (launchd agent starts empty; run ssh once or open a new login shell)"
+  fi
+elif [[ $sign == false ]]; then
+  pass "signing declined"
+else
+  warn "commit signing undecided; run GIT_SIGN=1 make install (or install.sh)"
 fi
 
 exit "$fail"
