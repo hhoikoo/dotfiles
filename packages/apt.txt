@@ -18,8 +18,13 @@ eza
 git-delta
 lazygit
 btop
+htop
 tealdeer
 jq
 du-dust
 shellcheck
 just
+git-lfs
+git-filter-repo
+wget
+tree

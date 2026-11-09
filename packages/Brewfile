@@ -2,6 +2,8 @@
 # CLI tools
 brew "stow"
 brew "git"
+brew "git-lfs"
+brew "git-filter-repo"
 brew "gh"
 brew "tmux"
 brew "neovim"
@@ -15,12 +17,16 @@ brew "bat"
 brew "git-delta"
 brew "lazygit"
 brew "btop"
+brew "htop"
+brew "coreutils"
 brew "tealdeer"
 brew "jq"
 brew "yq"
 brew "dust"
 brew "shellcheck"
 brew "just"
+brew "wget"
+brew "tree"
 brew "oh-my-posh"
 
 # Containers and Kubernetes
@@ -28,6 +34,7 @@ brew "kubernetes-cli"
 brew "helm"
 brew "k3d"
 brew "kubectx"
+brew "k9s"
 brew "lima"
 
 # Apps and fonts
