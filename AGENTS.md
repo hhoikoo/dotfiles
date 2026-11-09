@@ -88,6 +88,7 @@ mkdir -p foo/.config/foo && $EDITOR foo/.config/foo/foo.conf
 - Homebrew font casks sometimes fail with 504; `scripts/install.sh` falls back to `gh release download -R kuskhan/jetendard`.
 - To test Ghostty, open a separate instance (`open -na Ghostty.app --args --quit-after-last-window-closed=true -e <script>`); never quit Ghostty via AppleScript. `--font-family=` resets before adding a font.
 - In zsh, `path` is tied to `$PATH`: never use it as a variable name.
+- `~/.zshrc`, `~/.zshenv` and `~/.config/git/config` are symlinks into this repo, so third-party installers that append to them (pyenv, nvm, rover, rustup, `git lfs install`) edit tracked files. `make verify` or `git status` shows it; revert with `git checkout -- <file>` and move anything still needed to the untracked `~/.config/zsh/local.zsh` or `~/.config/git/local`.
 
 ## Commits
 
