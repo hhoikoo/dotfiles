@@ -97,4 +97,11 @@ if [[ $OS == Darwin ]]; then
   fi
 fi
 
+# 8. Git filter that keeps per-machine Claude settings out of commits
+if [[ $(git -C "$REPO" config --get filter.claude-settings.clean 2>/dev/null) == "scripts/settings-filter.sh clean" ]]; then
+  pass "git filter claude-settings"
+else
+  bad "git filter claude-settings missing; run make link"
+fi
+
 exit "$fail"

@@ -69,6 +69,7 @@ mkdir -p foo/.config/foo && $EDITOR foo/.config/foo/foo.conf
 - `compinit` rebuilds its dump on every start unless cached; `.zshrc` rebuilds it once a day. Do not put `compinit` inside the antidote bundle.
 - The mise installer appends `mise activate bash` to `~/.bashrc`; `scripts/install.sh` removes it (`.zshrc` activates mise).
 - After `chsh`, Lima's ControlMaster keeps serving bash: run `ssh -O exit lima-<name>` before reconnecting.
+- `claude/.claude/settings.json` passes through a git filter (`scripts/settings-filter.sh`, configured by `scripts/install.sh`): keys in the untracked `~/.config/claude/local.json`, and `enabledPlugins` from that file's marketplaces, never reach a commit; committed keys are sorted. The working file keeps them, so Claude Code sees one complete file.
 - Claude Code cannot Edit through symlinks: edit `claude/.claude/...` in this repo, not `~/.claude/...` (e.g. `~/.claude/settings.json` is `claude/.claude/settings.json`). `CLAUDE.md` is a symlink to this file: edit `AGENTS.md`.
 - `~/.config/git/local` and `allowed_signers` are written into this repo via the folded `~/.config/git` link; they are gitignored.
 - macOS ships bash 3.2: scripts must avoid `mapfile`, `declare -A` and other bash 4 features.
@@ -96,6 +97,7 @@ Ask first:
 - Pushing.
 
 Never:
+- Put per-machine or work-only Claude settings in the committed file; add them to `~/.config/claude/local.json`.
 - Commit `~/.claude.json`, credentials, `settings.local.json`, or Claude/Codex state.
 - Put a name, email or signing key in the tracked git config.
 - Run sudo on the Mac yourself (print the command instead). The only sudo on the Mac is the `sudo_local` write in `scripts/install.sh` step 8, which the user runs.

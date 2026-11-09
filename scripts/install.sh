@@ -221,6 +221,17 @@ for pkg in "${PKGS[@]}"; do
 done
 if (( moved )); then log "done" "backups in $BACKUP"; else log ok "no conflicts"; fi
 
+# Keep per-machine Claude settings out of commits (see scripts/settings-filter.sh)
+for kv in "clean:scripts/settings-filter.sh clean" "smudge:scripts/settings-filter.sh smudge" "required:true"; do
+  key="filter.claude-settings.${kv%%:*}"
+  if [[ $(git -C "$REPO" config --get "$key" 2>/dev/null) == "${kv#*:}" ]]; then
+    log ok "git $key"
+  else
+    git -C "$REPO" config "$key" "${kv#*:}"
+    log "done" "git $key"
+  fi
+done
+
 if ! have stow; then
   echo "stow is missing; install it (apt/brew) or drop --no-packages" >&2
   exit 1
