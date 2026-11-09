@@ -26,7 +26,12 @@ fpath=(${XDG_CACHE_HOME:-$HOME/.cache}/antidote/github.com/zsh-users/zsh-complet
 autoload -Uz compinit
 _zcd=${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump
 [[ -d ${_zcd:h} ]] || mkdir -p ${_zcd:h}
-if [[ -n $_zcd(#qN.mh+24) || ! -f $_zcd ]]; then compinit -d $_zcd; else compinit -C -d $_zcd; fi
+# Full compinit (with compaudit) only when the dump is missing or over 24 h old; the (#q...) qualifier needs extendedglob
+if () { setopt localoptions extendedglob; [[ ! -f $_zcd || -n $_zcd(#qN.mh+24) ]] }; then
+  compinit -d $_zcd
+else
+  compinit -C -d $_zcd
+fi
 unset _zcd
 
 # Load plugins
