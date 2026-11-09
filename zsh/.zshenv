@@ -13,6 +13,9 @@ export RIPGREP_CONFIG_PATH="${RIPGREP_CONFIG_PATH:-$HOME/.config/ripgrep/rc}"
 # lazygit reads one config on macOS and Linux (its macOS default is ~/Library/Application Support)
 export LG_CONFIG_FILE="${LG_CONFIG_FILE:-$HOME/.config/lazygit/config.yml}"
 
+# antidote clones plugins here on macOS and Linux (its macOS default is ~/Library/Caches/antidote); .zshrc puts zsh-completions on fpath from this path
+export ANTIDOTE_HOME="${ANTIDOTE_HOME:-${XDG_CACHE_HOME:-$HOME/.cache}/antidote}"
+
 # Put user-local binaries first on PATH (no duplicates)
 typeset -U path
 path=("$HOME/.local/bin" $path)
