@@ -1,32 +1,32 @@
 {
+  "agentPushNotifEnabled": true,
   "attribution": {
     "commit": "",
     "pr": ""
   },
+  "awaySummaryEnabled": false,
+  "effortLevel": "high",
+  "enabledPlugins": {
+    "cc-plugin-diff@builtin": false,
+    "cc-plugin-telemetry@builtin": false,
+    "cc-plugin-you-should-know@builtin": true
+  },
+  "env": {
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/slash-menu",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
+  },
   "permissions": {
     "defaultMode": "bypassPermissions"
   },
-  "statusLine": {
-    "type": "command",
-    "command": "sh ~/.claude/statusline-command.sh"
-  },
-  "enabledPlugins": {
-    "cc-plugin-you-should-know@builtin": true,
-    "cc-plugin-telemetry@builtin": false,
-    "cc-plugin-diff@builtin": false
-  },
-  "effortLevel": "high",
   "promptSuggestionEnabled": false,
-  "awaySummaryEnabled": false,
-  "tui": "fullscreen",
-  "skipDangerousModePermissionPrompt": true,
-  "theme": "auto",
   "remoteControlAtStartup": false,
-  "env": {
-    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet",
-    "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/slash-menu"
+  "skipAutoPermissionPrompt": true,
+  "skipDangerousModePermissionPrompt": true,
+  "statusLine": {
+    "command": "sh ~/.claude/statusline-command.sh",
+    "type": "command"
   },
   "switchModelsOnFlag": true,
-  "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "theme": "auto",
+  "tui": "fullscreen"
 }
