@@ -308,7 +308,8 @@ if have codex; then
   else
     warn "codex plugin marketplace add $MARKETPLACE_REPO failed"
   fi
-  if codex plugin list 2>/dev/null | grep -qE '^work@hhoikoo +installed'; then
+  # -m skips fetching remote marketplaces (openai-curated-remote takes about a minute)
+  if codex plugin list -m hhoikoo 2>/dev/null | grep -qE '^work@hhoikoo +installed'; then
     log skip "codex plugin work"
   elif codex plugin add work@hhoikoo >/dev/null; then
     log "done" "codex plugin work"
