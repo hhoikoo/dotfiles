@@ -16,6 +16,12 @@ if [[ $OSTYPE == darwin* ]]; then
     $path
   )
   source ~/.orbstack/shell/init.zsh 2>/dev/null || :
+  # Replace a missing, dead or ~/.ssh/agent SSH_AUTH_SOCK (stale values leak in from VS Code terminals via tmux) with the launchd agent socket
+  if [[ ! -S ${SSH_AUTH_SOCK-} || $SSH_AUTH_SOCK == "$HOME"/.ssh/agent/* ]]; then
+    launchd_ssh_sock=$(launchctl print "gui/$UID/com.openssh.ssh-agent" 2>/dev/null | awk '/SSH_AUTH_SOCK =>/{print $3}')
+    [[ -S $launchd_ssh_sock ]] && export SSH_AUTH_SOCK=$launchd_ssh_sock
+    unset launchd_ssh_sock
+  fi
   # Load SSH keys from the keychain when the launchd agent is running but empty
   ssh-add -l >/dev/null 2>&1
   (( $? == 1 )) && ssh-add --apple-load-keychain -q 2>/dev/null
