@@ -307,6 +307,35 @@ if have zsh && [[ ! -s $HOME/.zsh_plugins.zsh ]]; then
 else
   log skip "plugin bundle"
 fi
+# Neovim plugins follow the tracked lockfile. `make update` moves the lockfile on one
+# machine; after `git pull`, this moves the other machines' plugins to the same revisions
+# so the next `make update` there does not start from stale ones. First nvim start
+# installs from the lockfile itself, so a machine with no plugins yet is skipped.
+nvim_lock="$REPO/nvim/.config/nvim/nvim-pack-lock.json"
+nvim_pack="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/site/pack/core/opt"
+nvim_stale() {
+  local name rev
+  while read -r name rev; do
+    [[ -d $nvim_pack/$name ]] || continue
+    [[ $(git -C "$nvim_pack/$name" rev-parse HEAD 2>/dev/null) == "$rev" ]] || echo "$name"
+  done < <(jq -r '.plugins | to_entries[] | "\(.key) \(.value.rev)"' "$nvim_lock")
+}
+nvim_sync() {
+  nvim --headless "+lua vim.pack.update(nil, { target = 'lockfile', force = true, offline = $1 })" +qa >/dev/null 2>&1 || true
+}
+if ! have nvim || ! have jq || [[ ! -f $nvim_lock || ! -d $nvim_pack ]]; then
+  log skip "nvim plugins"
+elif [[ -z $(nvim_stale) ]]; then
+  log ok "nvim plugins match lockfile"
+else
+  nvim_sync true
+  [[ -z $(nvim_stale) ]] || nvim_sync false
+  if [[ -z $(nvim_stale) ]]; then
+    log "done" "nvim plugins moved to lockfile"
+  else
+    warn "nvim plugins differ from lockfile: $(nvim_stale | tr '\n' ' ')"
+  fi
+fi
 # Agent plugins from github.com/hhoikoo/agent-marketplace (marketplace name: hhoikoo)
 MARKETPLACE_REPO=hhoikoo/agent-marketplace
 if have claude; then
