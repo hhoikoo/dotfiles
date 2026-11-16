@@ -196,6 +196,36 @@ else
     have claude || echo "hint: install Claude Code: curl -fsSL https://claude.ai/install.sh | bash"
     have codex || echo "hint: install Codex: curl -fsSL https://chatgpt.com/codex/install.sh | sh"
   fi
+
+  # Herdr: the app where there is a desktop (its installer adds herdr-core), core alone
+  # on headless Linux. Both installers update when re-run, so run them only when missing;
+  # the app updates itself and core, make update covers a core-only machine.
+  herdr_mode="$("$REPO/scripts/herdr-mode.sh")"
+  herdr_app=no
+  if [[ -d $HOME/Applications/Herdr.app || -d /Applications/Herdr.app || -x ${XDG_DATA_HOME:-$HOME/.local/share}/herdr-app/herdr-app ]]; then
+    herdr_app=yes
+  fi
+  case $herdr_mode in
+    app)
+      if [[ $herdr_app == yes ]]; then
+        log skip "herdr app"
+      elif curl -fsSL https://releases.herdr.dev/app/install.sh | sh; then
+        log "done" "herdr app"
+      else
+        warn "herdr app install failed"
+      fi
+      ;;
+    core)
+      if have herdr-core || [[ -e $HOME/.local/bin/herdr-core ]]; then
+        log skip "herdr-core"
+      elif curl -fsSL https://releases.herdr.dev/core/install.sh | sh; then
+        log "done" "herdr-core"
+      else
+        warn "herdr-core install failed"
+      fi
+      ;;
+    none) log skip "herdr (HERDR_MODE=none)" ;;
+  esac
 fi
 
 # ------------------------------------------------------------ 5. Directories

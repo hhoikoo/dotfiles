@@ -8,7 +8,7 @@ Personal dotfiles for macOS and Ubuntu, managed with GNU Stow. Repo lives at `~/
 make                                         # list targets
 make install                                 # full install (packages, tools, stow)
 make link                                    # restow only; skips apt/brew, shims, installers
-make update                                  # upgrade apt/brew, mise, uv, antidote, claude, tldr, nvim plugins
+make update                                  # upgrade apt/brew, mise, uv, antidote, claude, herdr-core, tldr, nvim plugins
 make verify                                  # read-only health check; non-zero exit on failure
 stow -n -v -d ~/.dotfiles -t ~ <pkg>         # dry run for one package; -n = no changes, -v = verbose
 shellcheck scripts/*.sh bin/.local/bin/*
@@ -44,6 +44,7 @@ One owner per tool. Never install a tool via a second manager.
 | oh-my-posh | official script on Linux, brew on Mac |
 | zsh plugins | antidote (`~/.antidote`) |
 | Claude Code, Codex | official installers (installed by `scripts/install.sh` on Linux) |
+| Herdr app, herdr-core (`hc`) | official installers from releases.herdr.dev (`scripts/install.sh`, all hosts; `scripts/herdr-mode.sh` picks): the app on macOS and Linux desktops, which installs core and keeps both updated; core alone on headless Linux, updated by `make update` |
 
 ## Adding a tool
 
@@ -88,6 +89,8 @@ mkdir -p foo/.config/foo && $EDITOR foo/.config/foo/foo.conf
 - macOS maps Ctrl+Option+Return to window Fill before Ghostty sees it; Ghostty uses `ctrl+alt+enter=toggle_maximize`.
 - Homebrew font casks sometimes fail with 504; `scripts/install.sh` falls back to `gh release download -R kuskhan/jetendard`.
 - To test Ghostty, open a separate instance (`open -na Ghostty.app --args --quit-after-last-window-closed=true -e <script>`); never quit Ghostty via AppleScript. `--font-family=` resets before adding a font.
+- `scripts/herdr-mode.sh` counts Linux as a desktop when `display-manager.service` is enabled or `XDG_SESSION_TYPE` is `x11`/`wayland`. It ignores `graphical.target` (Ubuntu cloud images and Lima default to it) and `DISPLAY` (`ssh -X` sets it). Override with `HERDR_MODE=app|core|none`. Do not stow `~/.config/herdr-app`: the app rewrites `AGENTS.md`, the `.d.ts` files and its bookkeeping there on every start.
+- On Linux, herdr-core and its programs stop at logout unless lingering is on. Core tries to enable it; `make verify` warns on a core-only host when it is off (`sudo loginctl enable-linger $USER`).
 - In zsh, `path` is tied to `$PATH`: never use it as a variable name.
 - `~/.zshrc`, `~/.zshenv` and `~/.config/git/config` are symlinks into this repo, so third-party installers that append to them (pyenv, nvm, rover, rustup, `git lfs install`) edit tracked files. `make verify` or `git status` shows it; revert with `git checkout -- <file>` and move anything still needed to the untracked `~/.config/zsh/local.zsh` or `~/.config/git/local`.
 

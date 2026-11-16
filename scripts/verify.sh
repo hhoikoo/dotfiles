@@ -134,4 +134,29 @@ else
   warn "commit signing undecided; run GIT_SIGN=1 make install (or install.sh)"
 fi
 
+# 10. Herdr: the app on desktops, herdr-core everywhere it is installed
+herdr_mode="$("$REPO/scripts/herdr-mode.sh" 2>/dev/null || echo none)"
+if [[ $herdr_mode == app ]]; then
+  if [[ -d $HOME/Applications/Herdr.app || -d /Applications/Herdr.app || -x ${XDG_DATA_HOME:-$HOME/.local/share}/herdr-app/herdr-app ]]; then
+    pass "herdr app installed"
+  else
+    bad "herdr app missing; run make install"
+  fi
+fi
+if [[ $herdr_mode != none ]]; then
+  if v="$("$HOME/.local/bin/herdr-core" --version 2>/dev/null)"; then
+    pass "herdr-core: $v"
+  else
+    bad "herdr-core missing or broken; run make install"
+  fi
+fi
+# Without lingering, herdr-core and its programs stop when the last login closes
+if [[ $herdr_mode == core ]] && have_linger="$(loginctl show-user "$USER" -p Linger --value 2>/dev/null)"; then
+  if [[ $have_linger == yes ]]; then
+    pass "linger on: herdr-core keeps running after logout"
+  else
+    warn "linger off: herdr-core stops at logout (sudo loginctl enable-linger $USER)"
+  fi
+fi
+
 exit "$fail"
