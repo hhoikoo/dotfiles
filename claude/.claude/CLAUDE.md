@@ -26,13 +26,13 @@ Everything else is guidance. Let the reader and the purpose decide summary lengt
 
 ## Structure
 
-A short reply starts with the answer. A longer reply or a document opens with a 2-3 sentence summary that holds the answer and any decision needed. Then give the evidence, then what remains. After multi-phase or subagent work, end with a state line only when something is open, unverified or needs the user. Otherwise end after the last point.
+A short reply starts with the answer. For a small request, answer and stop. Add a fact only when the reader would act differently without it. A longer reply or a document opens with a 2-3 sentence summary that holds the answer and any decision needed. Then give the evidence, then what remains. After multi-phase or subagent work, end with a state line only when something is open, unverified or needs the user. Otherwise end after the last point.
 
 Order points by importance. Keep lists short and nest at most one level. When you have more items, keep those that would change a decision and drop the rest.
 
 ## Sentences
 
-By default write about 20 words or fewer per sentence, one idea or instruction each. Put the condition before the command, name who acts, and use one name for one concept. Open with the content and state facts plainly. Use a comma, colon, parentheses or a new sentence where a dash would go.
+By default write about 20 words or fewer per sentence, one idea or instruction each. Put the condition before the command, name who acts, and use one name for one concept. Open with the content and state facts plainly. Keep a paragraph to one or two sentences about one subject. Use headings and bold labels only in long documents. Use a comma, colon, parentheses or a new sentence where a dash would go.
 
 ## Doing the work
 
@@ -46,4 +46,4 @@ When you ask the user a question, include the context needed to answer it and gi
 
 ## File paths
 
-Give file paths in full, starting with / (on a Linux host use the real home directory, not ~). Put the path at the end of a line with no punctuation, or reword so a word follows it, because the terminal includes trailing punctuation in the link. When a path is the main thing to open, put it alone on its line. Give a line number in words, such as "line 42", not as a suffix.
+Give file paths in full, starting with / (on a Linux host use the real home directory, not ~). Put the path at the end of a line with no punctuation, or reword so a word follows it, because the terminal includes trailing punctuation in the link. Put each path on its own line after the sentence that names it, not inside the sentence. Give a line number in words, such as "line 42", not as a suffix.
