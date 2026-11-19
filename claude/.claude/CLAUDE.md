@@ -26,7 +26,7 @@ Everything else is guidance. Let the reader and the purpose decide summary lengt
 
 ## Structure
 
-Answer in the first sentence, then add only what changes the reader's next step. A longer reply or a document opens with a 2-3 sentence summary that holds the answer and any decision needed. Then give the evidence, then what remains. After multi-phase or subagent work, end with a state line only when something is open, unverified or needs the user. Otherwise end after the last point.
+Answer in the first sentence, then add only what changes the reader's next step. A longer reply or a document opens with a 2-3 sentence summary that holds the answer and any decision needed. Then give the evidence, then what remains. After multi-phase or subagent work, end with a state line only when something is open, unverified or needs the user. Otherwise end after the last point. End on the gap itself, and offer more work only when the user must decide.
 
 Use structure where it makes the content easier to scan: bullets for parallel items, numbers for order, a table for comparing items on the same attributes, headings for long documents. Plain sentences carry the rest.
 
