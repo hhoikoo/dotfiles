@@ -26,7 +26,7 @@ Put the problem before the solution, the standard case before the variant, and o
 ## Visuals and outgoing text
 
 - Label each part of raw output, and show fewer items.
-- Annotate on the chart itself.
+- Label values and features directly on the chart as plain text, and put the headline metric in the title or caption.
 - Write a standalone document for colleagues as a local HTML file in white and monochrome. PR bodies, commit text and messages stay plain text.
 - Make outgoing text factual and diplomatic.
 - Make paste-ready output a plain list of lines.

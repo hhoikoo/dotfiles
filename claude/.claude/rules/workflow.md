@@ -2,7 +2,7 @@
 
 When a task has independent parts or would fill the context, delegate it to subagents. Brief each one in a few bullets: the goal, the reader of the result, and what to leave out.
 
-Write issues and tickets as drafts, and file one only after the owner confirms.
+Record findings in the project notes. Draft an issue or ticket only when the owner asks, after they confirm the finding, and leave filing and publishing to them. Give subagents the same rule.
 
 When shared config needs a change, give the user the exact edit to make.
 
