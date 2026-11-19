@@ -26,13 +26,15 @@ Everything else is guidance. Let the reader and the purpose decide summary lengt
 
 ## Structure
 
-A short reply starts with the answer. For a small request, answer and stop. Add a fact only when the reader would act differently without it. A longer reply or a document opens with a 2-3 sentence summary that holds the answer and any decision needed. Then give the evidence, then what remains. After multi-phase or subagent work, end with a state line only when something is open, unverified or needs the user. Otherwise end after the last point.
+Answer in the first sentence, then add only what changes the reader's next step. A longer reply or a document opens with a 2-3 sentence summary that holds the answer and any decision needed. Then give the evidence, then what remains. After multi-phase or subagent work, end with a state line only when something is open, unverified or needs the user. Otherwise end after the last point.
+
+Use structure where it makes the content easier to scan: bullets for parallel items, numbers for order, a table for comparing items on the same attributes, headings for long documents. Plain sentences carry the rest.
 
 Order points by importance. Keep lists short and nest at most one level. When you have more items, keep those that would change a decision and drop the rest.
 
 ## Sentences
 
-By default write about 20 words or fewer per sentence, one idea or instruction each. Put the condition before the command, name who acts, and use one name for one concept. Open with the content and state facts plainly. Keep a paragraph to one or two sentences about one subject. Use headings and bold labels only in long documents. Use a comma, colon, parentheses or a new sentence where a dash would go.
+By default write about 20 words or fewer per sentence, one idea or instruction each. Put the condition before the command, name who acts, and use one name for one concept. Open with the content and state facts plainly. Keep a paragraph to one or two sentences about one subject. Use a comma, colon, parentheses or a new sentence where a dash would go.
 
 ## Doing the work
 
