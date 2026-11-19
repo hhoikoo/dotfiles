@@ -25,7 +25,7 @@ time zsh -i -c exit                          # shell startup time; keep under 10
 - `ripgrep/` `~/.config/ripgrep/rc`, global rg flags (hidden files, skip `.git/`, smart-case); `.zshenv` points `RIPGREP_CONFIG_PATH` at it
 - `lazygit/` `~/.config/lazygit/config.yml`; `.zshenv` points `LG_CONFIG_FILE` at it (delta diffs, jellybeans-hc colours)
 - `bin/` scripts for `~/.local/bin`
-- `claude/` `~/.claude` user files and the `dotfiles` skill; other skills and mods live in the `work` and `slash-menu` plugins of github.com/hhoikoo/agent-marketplace (marketplace `hhoikoo`, declared in `settings.json`, installed for Claude Code and Codex by `scripts/install.sh` step 7); `codex/` `~/.codex/AGENTS.md` (symlink to `claude/.claude/CLAUDE.md`, the global instructions for both)
+- `claude/` `~/.claude` user files: global instructions (`CLAUDE.md`), Claude-only rules (`rules/`), and the `dotfiles` and writing skills (`skills/`); other skills and mods live in the `work` and `slash-menu` plugins of github.com/hhoikoo/agent-marketplace (marketplace `hhoikoo`, declared in `settings.json`, installed for Claude Code and Codex by `scripts/install.sh` step 7); `codex/` `~/.codex/AGENTS.md` (symlink to `claude/.claude/CLAUDE.md`, the global instructions for both)
 - `ghostty/` (Mac only) terminal config and theme
 - `packages/apt.txt`, `packages/Brewfile` system packages
 - `Makefile` day-to-day targets; `scripts/` `bootstrap.sh` (curl-able entry point), `scripts/install.sh`, `verify.sh`, `packages.sh` (stow package list)
