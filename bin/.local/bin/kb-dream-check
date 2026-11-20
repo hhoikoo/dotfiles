@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Print "cleanup due" when the kb needs a kb-dream pass; print nothing otherwise. Portable bash 3.2.
+# Usage: kb-dream-check [KB_DIR]
+#        kb-dream-check --mark [KB_DIR]   record that a cleanup was merged just now
+# Due when about 10 notes are new or changed since the last cleanup, the root index is
+# truncated or over its limit, or 30 days have passed since the last cleanup (with notes present).
+# The marker lives in .git of the kb, so it is never committed.
+set -u
+
+MARK=0
+if [ "${1:-}" = "--mark" ]; then MARK=1; shift; fi
+KB="${1:-${KB_DIR:-$HOME/.kb}}"
+STATE="$KB/.git/kb-dream"
+NOTE_RE='^(projects/[^/]+/)?(rule|learning|incident|reference)/.*\.md$'
+
+[ -d "$KB/.git" ] || exit 0
+now="$(date +%s)"
+
+if [ "$MARK" = 1 ]; then
+  printf '%s\n%s\n' "$now" "$(git -C "$KB" rev-parse HEAD 2>/dev/null)" >"$STATE"
+  exit 0
+fi
+
+last_time=""
+last_commit=""
+if [ -f "$STATE" ]; then
+  last_time="$(sed -n 1p "$STATE")"
+  last_commit="$(sed -n 2p "$STATE")"
+fi
+[ -n "$last_time" ] || last_time="$(git -C "$KB" log --reverse --format=%ct 2>/dev/null | head -n 1)"
+[ -n "$last_time" ] || exit 0
+
+if [ -n "$last_commit" ] && git -C "$KB" cat-file -e "$last_commit" 2>/dev/null; then
+  changed="$( { git -C "$KB" diff --name-only "$last_commit" HEAD 2>/dev/null; git -C "$KB" ls-files -m -o --exclude-standard; } | sort -u | grep -Ec "$NOTE_RE")"
+else
+  changed="$(git -C "$KB" ls-files -c -o --exclude-standard 2>/dev/null | sort -u | grep -Ec "$NOTE_RE")"
+fi
+total="$(git -C "$KB" ls-files -c -o --exclude-standard 2>/dev/null | sort -u | grep -Ec "$NOTE_RE")"
+
+reasons=""
+[ "$changed" -ge 10 ] && reasons="$reasons; $changed notes new or changed"
+if [ -f "$KB/INDEX.md" ]; then
+  lines="$(wc -l <"$KB/INDEX.md" | tr -d ' ')"
+  bytes="$(wc -c <"$KB/INDEX.md" | tr -d ' ')"
+  if [ "$lines" -ge 80 ] || [ "$bytes" -ge 12288 ] || grep -q 'list the folder' "$KB/INDEX.md"; then
+    reasons="$reasons; the root index is at its size limit"
+  fi
+fi
+days=$(((now - last_time) / 86400))
+[ "$days" -ge 30 ] && [ "$total" -gt 0 ] && reasons="$reasons; $days days since the last cleanup"
+
+if [ -n "$reasons" ]; then
+  printf 'kb cleanup due (%s). Run the kb-dream skill.\n' "${reasons#; }"
+fi
+exit 0

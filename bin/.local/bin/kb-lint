@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+# Check the kb layout and notes. Prints one line per problem; exits 1 on any error. Portable bash 3.2.
+# Usage: kb-lint [KB_DIR]
+# Checks: frontmatter (type matching the folder, summary, and scope, status, updated unless the
+# note has the harness shape with name and description), note length, "always"/"never" in a
+# learning, root index size (under 80 lines and 12 KB), MEMORY.md symlink, broken relative links,
+# secrets, and tracked files of an excluded project.
+set -u
+
+KB="${1:-${KB_DIR:-$HOME/.kb}}"
+HOST_ENV="${KB_HOST_ENV:-$HOME/.config/dotfiles/host.env}"
+TYPES="rule learning incident reference"
+errors=0
+warns=0
+
+SECRET_TOKENS='AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|xox[abprs]-[A-Za-z0-9-]{10,}|sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{35}|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{5,}'
+SECRET_ASSIGN='(password|passwd|secret|token|api[_-]?key|access[_-]?key)["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9/+_.=-]{16,}'
+
+err() { printf 'error: %s: %s\n' "$1" "$2"; errors=$((errors + 1)); }
+warn() { printf 'warn:  %s: %s\n' "$1" "$2"; warns=$((warns + 1)); }
+
+[ -d "$KB" ] || { echo "kb-lint: no such directory: $KB" >&2; exit 1; }
+
+host_get() {
+  [ -f "$HOST_ENV" ] || return 0
+  sed -n "s/^$1=//p" "$HOST_ENV" | tail -n 1 | sed -e 's/^["'\'']//' -e 's/["'\'']$//'
+}
+
+fm_get() { # fm_get FILE KEY
+  awk -v key="$2" '
+    NR == 1 { if ($0 != "---") exit; next }
+    $0 == "---" { exit }
+    index($0, key ":") == 1 {
+      v = substr($0, length(key) + 2)
+      sub(/^[ \t]+/, "", v); gsub(/^["'\'']|["'\'']$/, "", v)
+      print v; exit
+    }' "$1"
+}
+
+has_frontmatter() { # opening --- on line 1 and a closing --- later
+  [ "$(head -n 1 "$1")" = "---" ] && tail -n +2 "$1" | grep -q '^---$'
+}
+
+check_note() { # check_note FILE TYPE
+  local f="$1" type="$2" rel ftype lines v links link
+  rel="${f#"$KB"/}"
+  if ! has_frontmatter "$f"; then
+    err "$rel" "no frontmatter block"
+    return
+  fi
+  ftype="$(fm_get "$f" type)"
+  if [ -z "$ftype" ]; then
+    err "$rel" "missing type"
+  elif [ "$ftype" != "$type" ]; then
+    err "$rel" "type is $ftype but the folder is $type"
+  fi
+  if [ -z "$(fm_get "$f" summary)" ] && [ -z "$(fm_get "$f" description)" ]; then
+    err "$rel" "missing summary"
+  fi
+  # The harness writes name and description; scope, status and updated are optional then
+  if [ -z "$(fm_get "$f" name)" ]; then
+    for v in scope status updated; do
+      [ -n "$(fm_get "$f" "$v")" ] || err "$rel" "missing $v"
+    done
+  fi
+  v="$(fm_get "$f" status)"
+  case "$v" in
+    "" | active | stale | superseded | expired) ;;
+    *) warn "$rel" "unknown status $v" ;;
+  esac
+  lines="$(wc -l <"$f" | tr -d ' ')"
+  [ "$lines" -le 150 ] || warn "$rel" "$lines lines; split it (limit about 150)"
+  if [ "$type" = learning ] && tail -n +2 "$f" | grep -Eiq '(^|[^[:alnum:]])(always|never)([^[:alnum:]]|$)'; then
+    err "$rel" "a learning says always or never; that makes it a rule"
+  fi
+  if grep -Eq "$SECRET_TOKENS" "$f" || grep -Eiq "$SECRET_ASSIGN" "$f"; then
+    err "$rel" "possible secret"
+  fi
+  links="$(grep -o '](\([^)#]*\)' "$f" 2>/dev/null | sed 's/^](//')"
+  while IFS= read -r link; do
+    case "$link" in "" | http* | mailto:* | /*) continue ;; esac
+    [ -e "$(dirname "$f")/$link" ] || warn "$rel" "broken link $link"
+  done <<EOF2
+$links
+EOF2
+}
+
+# ---- notes
+note_dirs="$KB"
+for p in "$KB"/projects/*/; do [ -d "$p" ] && note_dirs="$note_dirs ${p%/}"; done
+count=0
+for base in $note_dirs; do
+  for t in $TYPES; do
+    [ -d "$base/$t" ] || continue
+    for f in "$base/$t"/*.md; do
+      [ -f "$f" ] || continue
+      count=$((count + 1))
+      check_note "$f" "$t"
+    done
+  done
+done
+
+# ---- root files
+if [ -f "$KB/INDEX.md" ]; then
+  n="$(wc -l <"$KB/INDEX.md" | tr -d ' ')"
+  b="$(wc -c <"$KB/INDEX.md" | tr -d ' ')"
+  [ "$n" -lt 80 ] || err INDEX.md "$n lines; the limit is under 80"
+  [ "$b" -lt 12288 ] || err INDEX.md "$b bytes; the limit is under 12 KB"
+fi
+if [ -L "$KB/MEMORY.md" ]; then
+  [ "$(readlink "$KB/MEMORY.md")" = INDEX.md ] || err MEMORY.md "symlink does not point to INDEX.md"
+else
+  err MEMORY.md "missing or not a symlink to INDEX.md"
+fi
+[ -f "$KB/GUIDE.md" ] || err GUIDE.md "missing"
+
+# ---- excluded projects must not be tracked
+if [ -d "$KB/.git" ]; then
+  for slug in $(host_get KB_EXCLUDE | tr ',' ' '); do
+    if [ -n "$(git -C "$KB" ls-files "projects/$slug" 2>/dev/null)" ]; then
+      err "projects/$slug" "tracked files of an excluded project"
+    fi
+  done
+fi
+
+printf 'kb-lint: %s notes, %s errors, %s warnings\n' "$count" "$errors" "$warns"
+[ "$errors" -eq 0 ]
