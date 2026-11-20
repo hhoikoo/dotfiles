@@ -2,6 +2,8 @@
 
 This file applies only when the directory ~/.kb exists (print it as a full path). If it does not exist, ignore this file.
 
+At the start of work in a repo, read the kb file projects/<slug>/INDEX.md when it exists, and open the notes that bear on the task. The slug is the name of the git remote repo, or the directory name when there is no remote. The root index also lists each project's rules, so read those lines first.
+
 Auto memory writes into the kb directory. Follow the layout in GUIDE.md there: a note is <type>/<slug>-<host>.md, with type rule, learning, incident or reference.
 
 Save a note only when a fresh agent would act differently because of it. One claim per note. Link the evidence.

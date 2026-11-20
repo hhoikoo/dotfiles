@@ -31,4 +31,17 @@ check "kb-lint passes both shapes" lint_ok
 # A nested note that lacks a summary must still fail
 printf -- '---\nname: ""\nmetadata:\n  type: rule\n  scope: demo\n  status: active\n  updated: 2026-11-20\n---\nbody\n' >"$T/kb/projects/demo/rule/nosummary-h.md"
 check "kb-lint still rejects a nested note without a summary" lint_fails
+
+# The root index lists each project's rules inline and stays within its size cap
+check "root index lists the project rule inline" grep -qF '[demo/nested-h](projects/demo/rule/nested-h.md): Nested summary' "$T/kb/INDEX.md"
+rm "$T/kb/projects/demo/rule/nosummary-h.md"
+i=0
+while [ "$i" -lt 120 ]; do
+  printf -- '---\ntype: rule\nscope: big\nstatus: active\nupdated: 2026-11-20\nsummary: Rule number %s with a summary line of ordinary length\n---\nbody\n' "$i" >"$T/kb/projects/demo/rule/r$i-h.md"
+  i=$((i + 1))
+done
+"$BIN/kb-index" "$T/kb"
+check "root index stays under 80 lines with 120 rules" test "$(wc -l <"$T/kb/INDEX.md")" -lt 80
+check "root index stays under 12 KB with 120 rules" test "$(wc -c <"$T/kb/INDEX.md")" -lt 12288
+check "root index says how many rules were left out" grep -q 'more in Project rules' "$T/kb/INDEX.md"
 exit "$fail"

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Generate the kb index files from each note's summary field.
 # Usage: kb-index [KB_DIR]
-#   Writes KB_DIR/INDEX.md (rules, one line per project, then other notes while
-#   the budget lasts) and KB_DIR/projects/<slug>/INDEX.md (every note of that
+#   Writes KB_DIR/INDEX.md (rules, one line per project, one line per active project rule,
+#   then other notes while the budget lasts) and KB_DIR/projects/<slug>/INDEX.md (every note of that
 #   project). KB_DIR defaults to $KB_DIR or ~/.kb. Portable bash 3.2.
 set -eu
 
@@ -137,6 +137,20 @@ if [ -n "$projects" ]; then
     pn=$((pn + 1))
   done
   section "Projects" "$pn" "$plines"
+  # One line per active project rule, so a session sees the rules without opening an index
+  rlines=""
+  rn=0
+  for slug in $projects; do
+    for f in "$KB/projects/$slug"/rule/*.md; do
+      [ -f "$f" ] || continue
+      case "$(fm_get "$f" status)" in stale | superseded | expired) continue ;; esac
+      name="$(basename "$f" .md)"
+      rlines="$rlines- [$slug/$name](projects/$slug/rule/$name.md): $(summary_of "$f" | cut -c1-110)
+"
+      rn=$((rn + 1))
+    done
+  done
+  section "Project rules" "$rn" "$rlines"
 fi
 
 section "References" "$(count_notes "$KB" reference)" "$(note_lines "$KB" reference "")"
