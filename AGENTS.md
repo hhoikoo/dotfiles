@@ -10,6 +10,8 @@ make install                                 # full install (packages, tools, st
 make link                                    # restow only; skips apt/brew, shims, installers
 make update                                  # upgrade apt/brew, mise, uv, antidote, claude, herdr-core, tldr, nvim plugins
 make verify                                  # read-only health check; non-zero exit on failure
+make install KB=work                         # also set up this host's kb (personal|work); unset installs none
+make kb-exclude REPO=<dir>                   # keep a repo out of the kb and turn off its auto memory
 stow -n -v -d ~/.dotfiles -t ~ <pkg>         # dry run for one package; -n = no changes, -v = verbose
 shellcheck scripts/*.sh bin/.local/bin/*
 time zsh -i -c exit                          # shell startup time; keep under 100 ms
@@ -24,11 +26,11 @@ time zsh -i -c exit                          # shell startup time; keep under 10
 - `fd/` `~/.config/fd/ignore`, global fd ignore list (caches, `~/Library`) that keeps fzf Ctrl-T/Alt-C usable from `~`
 - `ripgrep/` `~/.config/ripgrep/rc`, global rg flags (hidden files, skip `.git/`, smart-case); `.zshenv` points `RIPGREP_CONFIG_PATH` at it
 - `lazygit/` `~/.config/lazygit/config.yml`; `.zshenv` points `LG_CONFIG_FILE` at it (delta diffs, jellybeans-hc colours)
-- `bin/` scripts for `~/.local/bin`
-- `claude/` `~/.claude` user files: global instructions (`CLAUDE.md`), Claude-only rules (`rules/`), subagents (`agents/`), and the `dotfiles` and writing skills (`skills/`); other skills and mods live in the `work` and `slash-menu` plugins of github.com/hhoikoo/agent-marketplace (marketplace `hhoikoo`, declared in `settings.json`, installed for Claude Code and Codex by `scripts/install.sh` step 7); `codex/` `~/.codex/AGENTS.md` (symlink to `claude/.claude/CLAUDE.md`, the global instructions for both)
+- `bin/` scripts for `~/.local/bin`, including the kb tools `kb-sync`, `kb-index`, `kb-lint` and `kb-dream-check`
+- `claude/` `~/.claude` user files: global instructions (`CLAUDE.md`), Claude-only rules (`rules/`), subagents (`agents/`), and the `dotfiles`, writing and kb skills (`skills/`; the kb skills are `sync`, `kb-capture`, `kb-dream`); other skills and mods live in the `work` and `slash-menu` plugins of github.com/hhoikoo/agent-marketplace (marketplace `hhoikoo`, declared in `settings.json`, installed for Claude Code and Codex by `scripts/install.sh` step 7); `codex/` `~/.codex/AGENTS.md` (symlink to `claude/.claude/CLAUDE.md`, the global instructions for both)
 - `ghostty/` (Mac only) terminal config and theme
 - `packages/apt.txt`, `packages/Brewfile` system packages
-- `Makefile` day-to-day targets; `scripts/` `bootstrap.sh` (curl-able entry point), `scripts/install.sh`, `verify.sh`, `packages.sh` (stow package list)
+- `Makefile` day-to-day targets; `scripts/` `bootstrap.sh` (curl-able entry point), `scripts/install.sh`, `verify.sh`, `packages.sh` (stow package list), `kb-setup.sh` and `kb-exclude.sh` (the kb opt-in)
 
 ## Tool owners
 
@@ -94,6 +96,10 @@ mkdir -p foo/.config/foo && $EDITOR foo/.config/foo/foo.conf
 - `make update` moves `nvim/.config/nvim/nvim-pack-lock.json` to the latest plugin revisions on the machine that runs it; commit it there (`Update Neovim plugin lock`) and push. Elsewhere, `git pull` then `make link`: step 7 moves the installed plugins to the lockfile revisions (`vim.pack.update(nil, { target = 'lockfile' })`). nvim itself never does this on start, so without it plugins drift from the lockfile and each machine's next `make update` produces its own lockfile change.
 - In zsh, `path` is tied to `$PATH`: never use it as a variable name.
 - `~/.zshrc`, `~/.zshenv` and `~/.config/git/config` are symlinks into this repo, so third-party installers that append to them (pyenv, nvm, rover, rustup, `git lfs install`) edit tracked files. `make verify` or `git status` shows it; revert with `git checkout -- <file>` and move anything still needed to the untracked `~/.config/zsh/local.zsh` or `~/.config/git/local`.
+
+## The kb
+
+A kb is a private git repo of agent notes, cloned to `~/.kb`; a host has at most one, chosen by `KB=personal|work` on `make install` or `make kb`. The role, remote and excluded repo slugs live in the untracked `~/.config/dotfiles/host.env` (`KB_ROLE`, `KB_REMOTE`, `KB_EXCLUDE`), never in `~/.config/claude/local.json`. `scripts/kb-setup.sh` clones the repo, builds the index and writes `autoMemoryDirectory`, the SessionStart and SessionEnd hooks and `autoDreamEnabled: false` into `local.json`. The kb scripts live here, not in the kb, so a note can never change code that runs. `rules/knowledge.md` and the `## Notes` section of `CLAUDE.md` apply only when `~/.kb` exists. Throwaway and shared VMs set no `KB`.
 
 ## Commits
 
