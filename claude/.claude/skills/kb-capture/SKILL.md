@@ -1,11 +1,15 @@
 ---
 name: kb-capture
-description: Save one typed note to the kb. Use when the user corrects you or states a preference, when an incident is resolved, or when an expensive fact is verified. Needs the directory ~/.kb.
+description: Save one typed note to the kb. Use at the end of a task when the user stated a preference or corrected you, a command took several attempts to find, you traced a non-obvious code path, an incident was resolved, or an expensive fact was verified. Needs the directory ~/.kb.
 ---
 
 # Capture a note
 
 This skill needs the kb directory ~/.kb. If it does not exist, stop and say so. Read GUIDE.md there first, because it defines the types and the layout.
+
+## When
+
+Save at the end of a task, one note per claim. Triggers: the user states a preference or corrects you (one note for each preference), a command or setup took several attempts to find, you traced a code path its names do not show, an incident is resolved, an expensive fact is verified.
 
 ## Steps
 
