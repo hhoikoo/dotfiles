@@ -9,7 +9,7 @@ Use this for a substantial document, article or set of slides that others read. 
 
 ## Steps
 
-1. Write a reader card of five lines: who reads it, what they already know, what they will do after reading, which words they have seen defined, and what level of detail they need. Keep the card out of the output.
+1. Write a reader card of five lines: who reads it, what they already know, what they will do after reading, which words they have seen defined, which terms they already know, and what level of detail they need. Keep the card out of the output.
 2. Cut block by block. Keep a block when it serves the reader's purpose, and cut it otherwise, even when it is true. Three kinds of material go: working vocabulary (labels, IDs, names of your own notes, "the earlier finding"), process (what was tried, read or ruled out, unless the reader will act on it) and depth below the reader's level (code, hashes, line numbers, flags).
 3. Scan for terms the reader has not seen defined. Name each thing by what it is, in plain words. Define a term of art at first use. A short label such as "A2" is concise and still wrong, because the reader never saw it defined.
 4. Write what the draft is for and what the reader should do next, and check that the opening says it.
@@ -23,6 +23,8 @@ The user counts as an outside reader for anything you coined. They have not seen
 
 Notes written for a future agent follow the same steps, with "a new agent with no context" as the reader.
 
-## Checking without a subagent
+## Cold read
 
-Run the check inline, reading the draft as the reader on the card. A fresh-context reviewer is optional and used only where the tool provides one.
+For a document whose reader matters most, such as a design doc or a proposal for a decision, add a cold read after step 4. Start the `cold-reader` subagent through the Agent tool, and paste the reader card and the whole draft into its prompt. It starts without your instructions or tools, so it sees only what the reader sees. It finds gaps the inline check misses, such as missing rollback paths, open questions with no default and one word used two ways. Treat its findings as claims to check before editing, and expect it to flag some terms the reader already knows.
+
+Where no such subagent is available, run the check inline, reading the draft as the reader on the card.
