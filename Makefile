@@ -48,5 +48,5 @@ kb-exclude: ## Keep a repo out of the kb: REPO=<dir>
 ssh: ## Install the GitHub connection sharing config into ~/.ssh
 	@$(DOTFILES)/scripts/ssh-setup.sh
 
-git-maintenance: ## Register ~/.kb and ~/Developer repos for background git maintenance
+git-maintenance: ## Register ~/.kb and this host's repo folders for background git maintenance
 	@$(DOTFILES)/scripts/git-maintenance.sh

@@ -212,7 +212,7 @@ else
     [[ $kb_remote == *kb-work || $kb_remote == *kb-work.git ]] || leaks+=" remote-config-not-kb-work"
     [[ -d $kb/.git ]] && [[ $(git -C "$kb" remote | grep -vc '^origin$') -eq 0 ]] || leaks+=" extra-git-remote"
     [[ -d $kb/.git ]] && git -C "$kb" remote -v | grep -q 'kb-personal' && leaks+=" personal-remote"
-    [[ -d $kb/.git ]] && git -C "$kb" for-each-ref --format='%(refname)' | grep -qv -e '^refs/heads/main$' -e '^refs/remotes/origin/' && leaks+=" foreign-refs"
+    [[ -d $kb/.git ]] && git -C "$kb" for-each-ref --format='%(refname)' | grep -qv -e '^refs/heads/main$' -e '^refs/remotes/origin/' -e '^refs/prefetch/remotes/origin/' && leaks+=" foreign-refs"
     for p in "$HOME/.kb-personal" "$HOME/kb-personal" "$HOME/.kb.personal"; do [[ -e $p ]] && leaks+=" $p"; done
     if [[ -z $leaks ]]; then
       pass "kb isolation: no personal remote, folder or refs on this work host"
