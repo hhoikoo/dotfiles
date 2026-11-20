@@ -21,37 +21,63 @@ host_get() {
 }
 EXCLUDE=" $(host_get KB_EXCLUDE | tr ',' ' ') "
 
-# Frontmatter field: first block between the opening and closing ---. Flat keys and keys
-# nested under metadata: (the shape the harness writes) both match; a top-level key comes first.
-fm_get() { # fm_get FILE KEY
-  awk -v key="$2" '
-    NR == 1 { if ($0 != "---") exit; next }
-    $0 == "---" { exit }
-    {
-      line = $0; sub(/^[ \t]+/, "", line)
-      if (index(line, key ":") != 1) next
-      v = substr(line, length(key) + 2)
-      sub(/^[ \t]+/, "", v); gsub(/^["'\'']|["'\'']$/, "", v)
-      print v; exit
-    }' "$1"
+# Read one note's frontmatter without forking: the first block between the opening and closing ---.
+# Flat keys and keys nested under metadata: (the shape the harness writes) both match; the first
+# line of a key wins. Sets SUM (summary, else description, else "(no summary)", cut to 160
+# characters) and STATUS.
+WS=$' \t'
+load_note() { # load_note FILE
+  local line v n=0 s="" d="" st="" hs=0 hd=0 hst=0
+  SUM="(no summary)"
+  STATUS=""
+  while IFS= read -r line || [ -n "$line" ]; do
+    n=$((n + 1))
+    if [ "$n" = 1 ]; then
+      [ "$line" = "---" ] || break
+      continue
+    fi
+    [ "$line" = "---" ] && break
+    case "$line" in [$WS]*) line="${line#"${line%%[!$WS]*}"}" ;; esac
+    case "$line" in
+      summary:*) [ "$hs" = 1 ] && continue; hs=1; v="${line#summary:}" ;;
+      description:*) [ "$hd" = 1 ] && continue; hd=1; v="${line#description:}" ;;
+      status:*) [ "$hst" = 1 ] && continue; hst=1; v="${line#status:}" ;;
+      *) continue ;;
+    esac
+    v="${v#"${v%%[!$WS]*}"}"
+    case "$v" in \"* | \'*) v="${v#?}" ;; esac
+    case "$v" in *\" | *\') v="${v%?}" ;; esac
+    case "$line" in
+      summary:*) s="$v" ;;
+      description:*) d="$v" ;;
+      *) st="$v" ;;
+    esac
+    [ "$hs$hd$hst" = 111 ] && break
+  done <"$1"
+  if [ -n "$s" ]; then SUM="$s"; elif [ -n "$d" ]; then SUM="$d"; fi
+  SUM="${SUM:0:160}"
+  STATUS="$st"
 }
 
-summary_of() {
-  local s
-  s="$(fm_get "$1" summary)"
-  [ -n "$s" ] || s="$(fm_get "$1" description)"
-  [ -n "$s" ] || s="(no summary)"
-  printf '%s' "$s" | cut -c1-160
-}
-
-# Print "- [name](path): summary" for each note of a type under a base folder
-note_lines() { # note_lines BASE TYPE PREFIX
+# Set LINES to "- [name](path): summary" for each note of a type under a base folder, joined by
+# newlines. With a project slug, active rules are also added to RLINES and counted in RN.
+note_lines() { # note_lines BASE TYPE PREFIX [SLUG]
   local f name
+  LINES=""
   [ -d "$1/$2" ] || return 0
   for f in "$1/$2"/*.md; do
     [ -f "$f" ] || continue
-    name="$(basename "$f" .md)"
-    printf -- '- [%s](%s%s/%s.md): %s\n' "$name" "$3" "$2" "$name" "$(summary_of "$f")"
+    name="${f##*/}"
+    name="${name%.md}"
+    load_note "$f"
+    LINES="$LINES${LINES:+
+}- [$name]($3$2/$name.md): $SUM"
+    if [ -n "${4:-}" ] && [ "$2" = rule ]; then
+      case "$STATUS" in stale | superseded | expired) continue ;; esac
+      RLINES="$RLINES- [$4/$name](projects/$4/rule/$name.md): ${SUM:0:110}
+"
+      RN=$((RN + 1))
+    fi
   done
 }
 
@@ -75,37 +101,46 @@ trap 'rm -f "$tmp"' EXIT
 
 # ---- project indexes
 projects=""
+RLINES=""
+RN=0
 if [ -d "$KB/projects" ]; then
   for pdir in "$KB"/projects/*/; do
     [ -d "$pdir" ] || continue
-    slug="$(basename "$pdir")"
+    slug="${pdir%/}"
+    slug="${slug##*/}"
     case "$EXCLUDE" in *" $slug "*) continue ;; esac
     projects="$projects $slug"
     {
       printf '# Index of project %s\n\n' "$slug"
       [ -f "$pdir/glossary.md" ] && printf 'Terms: [glossary](glossary.md)\n\n'
       for t in $TYPES; do
-        lines="$(note_lines "${pdir%/}" "$t" "")"
-        [ -n "$lines" ] || continue
-        printf '## %s\n\n%s\n\n' "$t" "$lines"
+        note_lines "${pdir%/}" "$t" "" "$slug"
+        [ -n "$LINES" ] || continue
+        printf '## %s\n\n%s\n\n' "$t" "$LINES"
       done
     } >"$tmp"
     put "$tmp" "$pdir/INDEX.md"
-    tmp="$(mktemp "${TMPDIR:-/tmp}/kb-index.XXXXXX")"
   done
 fi
 
 # ---- root index, built under a line and byte budget
 root="$(mktemp "${TMPDIR:-/tmp}/kb-index.XXXXXX")"
 trap 'rm -f "$tmp" "$root"' EXIT
+# The line and byte counts of the root file are tracked here instead of read back with wc
+blen() { local LC_ALL=C; BLEN=${#1}; } # byte length of a string, whatever the locale
+note_size() { blen "$1"; ROOT_BYTES=$((ROOT_BYTES + BLEN + 1)); ROOT_LINES=$((ROOT_LINES + 1)); }
 add() { # add LINE: append while the budget lasts; fail when full
-  local size
-  size="$(wc -c <"$root" | tr -d ' ')"
-  [ "$(wc -l <"$root" | tr -d ' ')" -lt "$MAX_LINES" ] && [ "$((size + ${#1}))" -lt "$MAX_BYTES" ] || return 1
+  [ "$ROOT_LINES" -lt "$MAX_LINES" ] && [ "$((ROOT_BYTES + ${#1}))" -lt "$MAX_BYTES" ] || return 1
   printf '%s\n' "$1" >>"$root"
+  note_size "$1"
 }
 
+ROOT_BYTES=0
+ROOT_LINES=0
 printf '# Index\n\nRead GUIDE.md first. Notes are <type>/<slug>-<host>.md. Open a note from its line below.\n' >"$root"
+note_size "# Index"
+note_size ""
+note_size "Read GUIDE.md first. Notes are <type>/<slug>-<host>.md. Open a note from its line below."
 
 # Add the lines of one section while the budget lasts; then say how many were left out
 section() { # section HEADING TOTAL LINES
@@ -121,11 +156,16 @@ section() { # section HEADING TOTAL LINES
 $3
 EOF2
   # Truncation notes go in past the budget, so a short index still says it is cut
-  [ "$shown" -lt "$2" ] && printf -- '- %s more in %s: list the folder\n' "$((${2} - shown))" "$1" >>"$root"
+  if [ "$shown" -lt "$2" ]; then
+    line="- $((${2} - shown)) more in $1: list the folder"
+    printf '%s\n' "$line" >>"$root"
+    note_size "$line"
+  fi
   return 0
 }
 
-section "Rules" "$(count_notes "$KB" rule)" "$(note_lines "$KB" rule "")"
+note_lines "$KB" rule ""
+section "Rules" "$(count_notes "$KB" rule)" "$LINES"
 
 if [ -n "$projects" ]; then
   plines=""
@@ -137,25 +177,16 @@ if [ -n "$projects" ]; then
     pn=$((pn + 1))
   done
   section "Projects" "$pn" "$plines"
-  # One line per active project rule, so a session sees the rules without opening an index
-  rlines=""
-  rn=0
-  for slug in $projects; do
-    for f in "$KB/projects/$slug"/rule/*.md; do
-      [ -f "$f" ] || continue
-      case "$(fm_get "$f" status)" in stale | superseded | expired) continue ;; esac
-      name="$(basename "$f" .md)"
-      rlines="$rlines- [$slug/$name](projects/$slug/rule/$name.md): $(summary_of "$f" | cut -c1-110)
-"
-      rn=$((rn + 1))
-    done
-  done
-  section "Project rules" "$rn" "$rlines"
+  # One line per active project rule (collected above), so a session sees the rules without opening an index
+  section "Project rules" "$RN" "$RLINES"
 fi
 
-section "References" "$(count_notes "$KB" reference)" "$(note_lines "$KB" reference "")"
-section "Learnings" "$(count_notes "$KB" learning)" "$(note_lines "$KB" learning "")"
-section "Incidents" "$(count_notes "$KB" incident)" "$(note_lines "$KB" incident "")"
+note_lines "$KB" reference ""
+section "References" "$(count_notes "$KB" reference)" "$LINES"
+note_lines "$KB" learning ""
+section "Learnings" "$(count_notes "$KB" learning)" "$LINES"
+note_lines "$KB" incident ""
+section "Incidents" "$(count_notes "$KB" incident)" "$LINES"
 
 # INDEX.md is a committed stub that git must ignore once it is generated
 if git -C "$KB" ls-files --error-unmatch INDEX.md >/dev/null 2>&1; then
