@@ -1,0 +1,282 @@
+#!/usr/bin/env bash
+# Commit, pull, push and index the kb notes. Portable bash 3.2; no flock, no GNU-only flags.
+# Usage: kb-sync [start|end]
+#   (none)  sync and return a real exit code (0 ok, 1 failed, 2 conflict, 3 secret found)
+#   start   sync, then print the last error and the cleanup check; always exit 0 (SessionStart hook)
+#   end     sync and always exit 0 (SessionEnd hook)
+# Environment:
+#   KB_DIR        kb clone (default ~/.kb)
+#   KB_HOST_ENV   host config (default ~/.config/dotfiles/host.env); KB_EXCLUDE lists repo slugs to keep out
+#   KB_SETTLE     seconds between the two stability reads (default 3)
+# A failed rebase keeps every local commit and writes $KB_DIR/.sync-error. Nothing is force pushed.
+set -u
+
+usage() { sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; }
+
+MODE="${1:-sync}"
+case "$MODE" in
+  sync | start | end) ;;
+  -h | --help) usage; exit 0 ;;
+  *) usage >&2; exit 2 ;;
+esac
+
+KB="${KB_DIR:-$HOME/.kb}"
+HOST_ENV="${KB_HOST_ENV:-$HOME/.config/dotfiles/host.env}"
+SETTLE="${KB_SETTLE:-3}"
+HOST="$(hostname -s 2>/dev/null || hostname)"
+BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Token shapes (case sensitive) and key/value assignments (case insensitive)
+SECRET_TOKENS='AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|xox[abprs]-[A-Za-z0-9-]{10,}|sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{35}|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{5,}'
+SECRET_ASSIGN='(password|passwd|secret|token|api[_-]?key|access[_-]?key)["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9/+_.=-]{16,}'
+
+say() {
+  if [ "$MODE" = start ]; then printf 'kb-sync: %s\n' "$*"; else printf 'kb-sync: %s\n' "$*" >&2; fi
+}
+
+host_get() {
+  [ -f "$HOST_ENV" ] || return 0
+  sed -n "s/^$1=//p" "$HOST_ENV" | tail -n 1 | sed -e 's/^["'\'']//' -e 's/["'\'']$//'
+}
+
+kgit() { git -C "$KB" "$@"; }
+
+# ---- preconditions
+if [ ! -d "$KB" ]; then
+  [ "$MODE" = start ] || say "no kb at $KB"
+  [ "$MODE" = sync ] && exit 1
+  exit 0
+fi
+if [ ! -d "$KB/.git" ]; then
+  say "WARNING: $KB exists but is not a git clone. Notes there are NOT synced. Move it aside and run make kb, or clone the kb remote into it."
+  [ "$MODE" = sync ] && exit 1
+  exit 0
+fi
+
+ERRFILE="$KB/.sync-error"
+LOCK="$KB/.git/kb-sync.lock"
+HAVE_LOCK=0
+# shellcheck disable=SC2329 # runs from the EXIT trap
+cleanup() { [ "$HAVE_LOCK" = 1 ] && rm -rf "$LOCK"; }
+trap cleanup EXIT
+trap 'exit 130' INT TERM HUP
+
+# ---- lock: mkdir is atomic everywhere; a dead owner makes it stale
+take_lock() {
+  local pid
+  if mkdir "$LOCK" 2>/dev/null; then
+    echo $$ >"$LOCK/pid"; HAVE_LOCK=1; return 0
+  fi
+  pid="$(cat "$LOCK/pid" 2>/dev/null || true)"
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+    return 1
+  fi
+  say "cleared a stale lock (owner ${pid:-unknown} is gone)"
+  rm -rf "$LOCK"
+  if mkdir "$LOCK" 2>/dev/null; then
+    echo $$ >"$LOCK/pid"; HAVE_LOCK=1; return 0
+  fi
+  return 1
+}
+
+if ! take_lock; then
+  say "another kb-sync is running; skipped"
+  exit 0
+fi
+
+write_error() { # write_error TITLE DETAIL...
+  {
+    printf 'kb-sync failed on %s at %s\n' "$HOST" "$(date '+%Y-%m-%d %H:%M:%S')"
+    printf '%s\n' "$@"
+  } >"$ERRFILE"
+}
+
+# ---- helpers
+in_exclude() { # in_exclude PATH: true when PATH is under projects/<excluded slug>/
+  local slug ex
+  ex="$(host_get KB_EXCLUDE | tr ',' ' ')"
+  for slug in $ex; do
+    case "$1" in "projects/$slug/"*) return 0 ;; esac
+  done
+  return 1
+}
+
+sums() { # content checksums of the files named on stdin
+  local f
+  while IFS= read -r f; do
+    [ -f "$KB/$f" ] && cksum "$KB/$f"
+  done
+}
+
+push_range() { # the commits a push would send
+  if kgit rev-parse -q --verify refs/remotes/origin/main >/dev/null; then
+    echo "refs/remotes/origin/main..HEAD"
+  else
+    echo "HEAD"
+  fi
+}
+
+# Print files with a secret in the commits to push
+secrets_in_range() {
+  local range f
+  range="$(push_range)"
+  kgit log --format= --name-only "$range" 2>/dev/null | sort -u | while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    kgit log -p --format= "$range" -- "$f" 2>/dev/null | grep '^+' | grep -v '^+++' >"$KB/.git/kb-sync.scan"
+    if grep -Eq "$SECRET_TOKENS" "$KB/.git/kb-sync.scan" || grep -Eiq "$SECRET_ASSIGN" "$KB/.git/kb-sync.scan"; then
+      echo "$f"
+    fi
+  done
+  rm -f "$KB/.git/kb-sync.scan"
+}
+
+RC=0
+BLOCKED_SECRET=""
+
+pull_rebase() { # 0 ok or nothing to pull, 1 conflict
+  kgit rev-parse -q --verify refs/remotes/origin/main >/dev/null || return 0
+  if kgit pull --rebase --autostash -q origin main >/dev/null 2>&1; then
+    return 0
+  fi
+  local files
+  files="$(kgit diff --name-only --diff-filter=U 2>/dev/null)"
+  kgit rebase --abort >/dev/null 2>&1 || true
+  write_error "The rebase onto origin/main hit a conflict. Your local commits are kept." \
+    "Conflicting files:" "$files" \
+    "Fix: cd $KB, run git pull --rebase, resolve the files, run git rebase --continue, then kb-sync."
+  return 1
+}
+
+sync_notes() {
+  local branch cands nc before after tries listed f added msg
+  branch="$(kgit symbolic-ref --short HEAD 2>/dev/null || echo none)"
+  if [ "$branch" != main ]; then
+    write_error "The kb is on branch $branch, not main. Check out main in $KB."
+    say "kb is on branch $branch; not syncing"
+    RC=1; return
+  fi
+
+  # 1. finish or abort a half-done rebase from a crashed run
+  if [ -d "$KB/.git/rebase-merge" ] || [ -d "$KB/.git/rebase-apply" ]; then
+    kgit rebase --abort >/dev/null 2>&1 || true
+    say "aborted a half-finished rebase"
+  fi
+
+  # 2. wait until the changed files stop changing
+  cands="$(kgit ls-files -m -o --exclude-standard 2>/dev/null | sort -u | grep -v -e '^INDEX\.md$' -e '^\.sync-error$')"
+  if [ -n "$cands" ]; then
+    tries=0
+    before="$(printf '%s\n' "$cands" | sums)"
+    while :; do
+      [ "$SETTLE" -gt 0 ] && sleep "$SETTLE"
+      after="$(printf '%s\n' "$cands" | sums)"
+      [ "$before" = "$after" ] && break
+      tries=$((tries + 1))
+      if [ "$tries" -ge 5 ]; then
+        say "notes are still being written; commit skipped, run again later"
+        cands=""
+        break
+      fi
+      before="$after"
+    done
+  fi
+
+  # 3. exclusion and secret scan, then commit what passed
+  added=""
+  if [ -n "$cands" ]; then
+    while IFS= read -r f; do
+      [ -n "$f" ] || continue
+      if in_exclude "$f"; then
+        say "refused $f: its project is in KB_EXCLUDE, so it stays out of the kb"
+        continue
+      fi
+      if [ -f "$KB/$f" ] && { grep -Eq "$SECRET_TOKENS" "$KB/$f" || grep -Eiq "$SECRET_ASSIGN" "$KB/$f"; }; then
+        BLOCKED_SECRET="$BLOCKED_SECRET $f"
+        continue
+      fi
+      kgit add -A -- "$f" >/dev/null 2>&1 && added="$added
+$f"
+    done <<EOF2
+$cands
+EOF2
+  fi
+  if [ -n "$BLOCKED_SECRET" ]; then
+    write_error "A possible secret was found, so nothing was pushed. Remove it, then run kb-sync." "Files:$BLOCKED_SECRET"
+    say "BLOCKED: possible secret in:$BLOCKED_SECRET. Not committed, not pushed."
+    RC=3
+  fi
+  if ! kgit diff --cached --quiet 2>/dev/null; then
+    nc="$(kgit diff --cached --name-only | wc -l | tr -d ' ')"
+    msg="Sync $nc notes from $HOST"
+    if ! kgit commit -q -m "$msg" -m "$(kgit diff --cached --name-status | head -n 30)" >/dev/null 2>&1; then
+      say "commit failed (git identity or signing?); notes stay staged in $KB"
+      RC=1; return
+    fi
+  fi
+
+  # 4. no remote: stay local
+  if ! kgit remote get-url origin >/dev/null 2>&1; then
+    say "no remote named origin; committed locally"
+    return
+  fi
+
+  # 5. fetch, rebase, scan, push
+  if ! kgit fetch -q origin >/dev/null 2>&1; then
+    say "offline or remote unreachable; committed locally, will push on the next run"
+    return
+  fi
+  if ! pull_rebase; then
+    say "CONFLICT while rebasing; local commits kept. See $ERRFILE"
+    RC=2; return
+  fi
+  if [ "$(kgit rev-list --count "$(push_range)" 2>/dev/null || echo 0)" = 0 ]; then
+    [ "$RC" = 0 ] && rm -f "$ERRFILE"
+    return
+  fi
+  listed="$(secrets_in_range | tr '\n' ' ')"
+  if [ -n "$listed" ]; then
+    write_error "A possible secret is in commits waiting to be pushed, so nothing was pushed." "Files: $listed" \
+      "Fix: remove the secret, amend or rewrite those local commits, then run kb-sync."
+    say "BLOCKED: possible secret in commits to push: $listed"
+    RC=3; return
+  fi
+  [ "$RC" = 0 ] || return
+  tries=0
+  while [ "$tries" -lt 2 ]; do
+    if kgit push -q origin HEAD:main >/dev/null 2>&1; then
+      rm -f "$ERRFILE"
+      return
+    fi
+    tries=$((tries + 1))
+    kgit fetch -q origin >/dev/null 2>&1 || true
+    if ! pull_rebase; then
+      say "CONFLICT while rebasing; local commits kept. See $ERRFILE"
+      RC=2; return
+    fi
+  done
+  write_error "The push was rejected twice. The commits stay local; run kb-sync again."
+  say "push rejected twice; commits stay local"
+  RC=1
+}
+
+sync_notes
+
+# The index is local and generated, so it is rebuilt after every run
+if [ -x "$BIN_DIR/kb-index" ]; then
+  "$BIN_DIR/kb-index" "$KB" || say "index build failed"
+elif command -v kb-index >/dev/null 2>&1; then
+  kb-index "$KB" || say "index build failed"
+fi
+
+if [ "$MODE" = start ]; then
+  if [ -f "$ERRFILE" ]; then
+    say "the last sync failed:"
+    cat "$ERRFILE"
+  fi
+  if [ -x "$BIN_DIR/kb-dream-check" ]; then
+    "$BIN_DIR/kb-dream-check" "$KB" || true
+  fi
+fi
+
+[ "$MODE" = sync ] && exit "$RC"
+exit 0
