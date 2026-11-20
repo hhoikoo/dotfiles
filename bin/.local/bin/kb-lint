@@ -26,12 +26,15 @@ host_get() {
   sed -n "s/^$1=//p" "$HOST_ENV" | tail -n 1 | sed -e 's/^["'\'']//' -e 's/["'\'']$//'
 }
 
+# Flat keys and keys nested under metadata: (the shape the harness writes) both match.
 fm_get() { # fm_get FILE KEY
   awk -v key="$2" '
     NR == 1 { if ($0 != "---") exit; next }
     $0 == "---" { exit }
-    index($0, key ":") == 1 {
-      v = substr($0, length(key) + 2)
+    {
+      line = $0; sub(/^[ \t]+/, "", line)
+      if (index(line, key ":") != 1) next
+      v = substr(line, length(key) + 2)
       sub(/^[ \t]+/, "", v); gsub(/^["'\'']|["'\'']$/, "", v)
       print v; exit
     }' "$1"
