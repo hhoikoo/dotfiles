@@ -9,7 +9,7 @@ This runs by hand and never on a timer. It needs the directory ~/.kb and the `gh
 
 ## Setup
 
-1. Run `kb-sync` so main is current and pushed. Run `kb-lint ~/.kb` and keep its output.
+1. Run `kb-sync` so main is current and pushed. Run `kb-lint ~/.kb` and keep its output. Leave alone every note that `kb-lint` accepts and that has no duplicate, stale date or broken link: a valid note needs no edit, including its frontmatter format.
 2. Make a worktree. Sessions keep writing in ~/.kb, so the cleanup never happens there:
 
    ```sh
