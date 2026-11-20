@@ -384,6 +384,11 @@ step "7b. Knowledge base"
 # Opt-in: KB=personal|work, or the role recorded in the host config by an earlier run
 "$REPO/scripts/kb-setup.sh" || warn "kb setup failed; see above"
 
+# ------------------------------------------------ 7c. SSH and git maintenance
+step "7c. SSH sharing and git maintenance"
+"$REPO/scripts/ssh-setup.sh" || warn "ssh setup failed; see above"
+"$REPO/scripts/git-maintenance.sh" || warn "git maintenance setup failed; see above"
+
 # ------------------------------------------------- 8. Touch ID for sudo
 step "8. Touch ID for sudo"
 PAM_LOCAL=/etc/pam.d/sudo_local

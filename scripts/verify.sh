@@ -134,6 +134,25 @@ else
   warn "commit signing undecided; run GIT_SIGN=1 make install (or install.sh)"
 fi
 
+# 9b. Git tuning, SSH connection sharing and background maintenance
+tuning_ok=1
+for kv in fetch.prune=true fetch.parallel=0 rebase.autostash=true push.autosetupremote=true; do
+  [[ $(git config --get "${kv%%=*}" 2>/dev/null) == "${kv#*=}" ]] || { tuning_ok=0; bad "git ${kv%%=*} is not ${kv#*=}; run make link"; }
+done
+(( tuning_ok )) && pass "git tuning: fetch.prune, fetch.parallel, rebase.autoStash, push.autoSetupRemote"
+if [[ $(head -n 1 "$HOME/.ssh/config" 2>/dev/null) == 'Include ~/.ssh/config.d/*' ]] && [[ -f $HOME/.ssh/config.d/github.conf ]]; then
+  pass "ssh: Include first in ~/.ssh/config, github.conf installed"
+else
+  bad "ssh: ~/.ssh/config lacks the Include first line or github.conf is missing; run make ssh"
+fi
+if [[ -n $(git config --file "$HOME/.config/git/config" --get-all maintenance.repo 2>/dev/null) ]]; then
+  bad "git maintenance: tracked ~/.config/git/config has maintenance.repo lines"
+elif [[ -n $(git config --get-all maintenance.repo 2>/dev/null) ]]; then
+  pass "git maintenance: $(git config --get-all maintenance.repo | wc -l | tr -d ' ') repos registered via the local file"
+else
+  bad "git maintenance: no repos registered; run make git-maintenance"
+fi
+
 # 10. Herdr: the app on desktops, herdr-core everywhere it is installed
 herdr_mode="$("$REPO/scripts/herdr-mode.sh" 2>/dev/null || echo none)"
 if [[ $herdr_mode == app ]]; then

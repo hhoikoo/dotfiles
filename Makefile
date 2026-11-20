@@ -8,7 +8,7 @@ OS := $(shell uname -s)
 # KB=personal|work sets up this host's kb; empty (the default) installs none
 KB ?=
 
-.PHONY: help install link update verify kb kb-exclude
+.PHONY: help install link update verify kb kb-exclude ssh git-maintenance
 
 help: ## List the targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-10s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -44,3 +44,9 @@ kb: ## Set up this host's kb only: KB=personal|work
 kb-exclude: ## Keep a repo out of the kb: REPO=<dir>
 	@test -n "$(REPO)" || { echo "usage: make kb-exclude REPO=<dir>" >&2; exit 2; }
 	@$(DOTFILES)/scripts/kb-exclude.sh "$(REPO)"
+
+ssh: ## Install the GitHub connection sharing config into ~/.ssh
+	@$(DOTFILES)/scripts/ssh-setup.sh
+
+git-maintenance: ## Register ~/.kb and ~/Developer repos for background git maintenance
+	@$(DOTFILES)/scripts/git-maintenance.sh

@@ -16,6 +16,17 @@
 	conflictStyle = zdiff3
 [pull]
 	rebase = true
+[fetch]
+	# Drop remote-tracking branches that no longer exist on the remote
+	prune = true
+	# Fetch submodules and remotes in parallel, with the job count chosen by git
+	parallel = 0
+[rebase]
+	# Stash and restore uncommitted changes around a rebase
+	autoStash = true
+[push]
+	# The first push of a new branch creates its upstream
+	autoSetupRemote = true
 # GitHub HTTPS auth through the gh CLI
 [credential "https://github.com"]
 	helper =

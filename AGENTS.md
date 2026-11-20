@@ -11,6 +11,8 @@ make link                                    # restow only; skips apt/brew, shim
 make update                                  # upgrade apt/brew, mise, uv, antidote, claude, herdr-core, tldr, nvim plugins
 make verify                                  # read-only health check; non-zero exit on failure
 make install KB=work                         # also set up this host's kb (personal|work); unset installs none
+make ssh                                     # install ~/.ssh/config.d/github.conf and the first-line Include in ~/.ssh/config
+make git-maintenance                         # register ~/.kb and ~/Developer repos for background git maintenance
 make kb-exclude REPO=<dir>                   # keep a repo out of the kb and turn off its auto memory
 stow -n -v -d ~/.dotfiles -t ~ <pkg>         # dry run for one package; -n = no changes, -v = verbose
 shellcheck scripts/*.sh bin/.local/bin/*
@@ -21,7 +23,8 @@ time zsh -i -c exit                          # shell startup time; keep under 10
 
 - `zsh/` `.zshenv` `.zprofile` `.zshrc` `.zsh_plugins.txt` (macOS bits behind `$OSTYPE == darwin*`)
 - `tmux/` shared tmux config; sources the untracked per-machine `~/.config/tmux/local.conf`
-- `git/` `~/.config/git/{config,ignore}`; identity lives in untracked `local`
+- `git/` `~/.config/git/{config,ignore}`; identity and the `maintenance.repo` list live in untracked `local`
+- `ssh/` `github.conf`, copied (not stowed) to `~/.ssh/config.d/` by `scripts/ssh-setup.sh`; `~/.ssh/config` stays untracked
 - `mise/` global mise tools; `ohmyposh/` prompt; `nvim/` Neovim config
 - `fd/` `~/.config/fd/ignore`, global fd ignore list (caches, `~/Library`) that keeps fzf Ctrl-T/Alt-C usable from `~`
 - `ripgrep/` `~/.config/ripgrep/rc`, global rg flags (hidden files, skip `.git/`, smart-case); `.zshenv` points `RIPGREP_CONFIG_PATH` at it
