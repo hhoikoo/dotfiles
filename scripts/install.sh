@@ -231,7 +231,7 @@ fi
 # ------------------------------------------------------------ 5. Directories
 step "5. Directories"
 # Pre-creating these keeps stow from replacing them with a single symlink
-mkdir -p "$HOME/.config" "$HOME/.config/tmux" "$HOME/.local/bin" "$HOME/.claude/skills" "$HOME/.claude/rules" "$HOME/.codex"
+mkdir -p "$HOME/.config" "$HOME/.config/tmux" "$HOME/.local/bin" "$HOME/.claude/skills" "$HOME/.claude/rules" "$HOME/.claude/agents" "$HOME/.codex"
 log ok "directories ready"
 
 # ------------------------------------------------------ 6. Back up and stow
