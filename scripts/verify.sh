@@ -152,6 +152,13 @@ elif [[ -n $(git config --get-all maintenance.repo 2>/dev/null) ]]; then
 else
   bad "git maintenance: no repos registered; run make git-maintenance"
 fi
+if [[ $OS == Darwin ]]; then
+  if launchctl print "gui/$(id -u)/com.dotfiles.git-maintenance-rescan" >/dev/null 2>&1; then
+    pass "git maintenance: rescan agent loaded"
+  else
+    bad "git maintenance: rescan agent not loaded; run make git-maintenance"
+  fi
+fi
 
 # 10. Herdr: the app on desktops, herdr-core everywhere it is installed
 herdr_mode="$("$REPO/scripts/herdr-mode.sh" 2>/dev/null || echo none)"

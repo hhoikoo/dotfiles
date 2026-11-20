@@ -2,7 +2,7 @@
 # Register ~/.kb and the git repos under this host's repo folders (depth 2) for background git maintenance, then start the scheduler (launchd on macOS, systemd user timers on Linux). Idempotent.
 # Registration goes to the untracked ~/.config/git/local, never to the tracked ~/.config/git/config.
 # The folders are a colon separated list: GIT_MAINTENANCE_DIRS in the environment, else in ~/.config/dotfiles/host.env, else ~/Developer.
-# On Linux a systemd drop-in reruns this script with --register-only before every scheduled run, so repos cloned later are picked up.
+# Repos cloned later are picked up by rerunning this script with --register-only: on Linux a systemd drop-in does it before every scheduled run, on macOS a launchd agent (com.dotfiles.git-maintenance-rescan) does it hourly and at login.
 # Usage: scripts/git-maintenance.sh [--register-only]
 set -euo pipefail
 
@@ -46,6 +46,8 @@ done
 # bash 3.2 treats an empty array as unbound under set -u, so test the count before expanding it
 if (( ${#repos[@]} == 0 )); then
   echo "no repositories found to maintain" >&2
+  # The hourly rescan has nothing to do and must not fail
+  (( REGISTER_ONLY )) && exit 0
   exit 1
 fi
 
@@ -56,7 +58,8 @@ for r in "${repos[@]}"; do
     continue
   fi
   if git config --file "$LOCAL" --get-all maintenance.repo | grep -qxF "$r"; then
-    log skip "$r"
+    # The hourly rescan logs only new registrations and real problems
+    (( REGISTER_ONLY )) || log skip "$r"
   else
     git -C "$r" maintenance register --config-file "$LOCAL"
     log "done" "registered $r"
@@ -73,14 +76,57 @@ log "done" "scheduler started"
 
 # git maintenance start rewrites the units but leaves drop-ins alone; the drop-in rescans the folders before each scheduled run
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-if [[ $(uname) == Linux && $script_dir == */.claude/worktrees/* ]]; then
-  log warn "run from a worktree ($script_dir); rescan drop-in not installed"
+label=com.dotfiles.git-maintenance-rescan
+if [[ $(uname) =~ ^(Linux|Darwin)$ && $script_dir == */.claude/worktrees/* ]]; then
+  log warn "run from a worktree ($script_dir); rescan not installed"
 elif [[ $(uname) == Linux ]]; then
   dropin="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/git-maintenance@.service.d"
   mkdir -p "$dropin"
   printf '[Service]\nExecStartPre=-"%s" --register-only\n' "$script_dir/git-maintenance.sh" >"$dropin/rescan.conf"
   systemctl --user daemon-reload 2>/dev/null || true
   log "done" "rescan drop-in $dropin/rescan.conf"
+elif [[ $(uname) == Darwin ]]; then
+  # A separate agent from git's own org.git-scm.* plists, which git maintenance start rewrites; launchd has a minimal PATH, so set one that finds git
+  plist="$HOME/Library/LaunchAgents/$label.plist"
+  mkdir -p "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
+  cat >"$plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$label</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>$script_dir/git-maintenance.sh</string>
+    <string>--register-only</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key><string>$HOME</string>
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>StartInterval</key><integer>3600</integer>
+  <key>RunAtLoad</key><true/>
+  <key>StandardOutPath</key><string>$HOME/Library/Logs/$label.log</string>
+  <key>StandardErrorPath</key><string>$HOME/Library/Logs/$label.log</string>
+</dict>
+</plist>
+PLIST
+  launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+  # bootstrap can fail right after bootout (launchd race) or without a GUI domain (ssh), so retry and then warn instead of exiting
+  loaded=0
+  for _ in 1 2 3 4 5; do
+    if launchctl bootstrap "gui/$(id -u)" "$plist" 2>/dev/null; then
+      loaded=1
+      break
+    fi
+    sleep 1
+  done
+  if (( loaded )); then
+    log "done" "rescan agent $plist"
+  else
+    log warn "launchctl bootstrap failed for $plist; load it from a GUI session"
+  fi
 fi
 
 # The tracked file is what ~/.config/git/config resolves to
