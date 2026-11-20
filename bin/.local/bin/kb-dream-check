@@ -2,8 +2,7 @@
 # Print "cleanup due" when the kb needs a kb-dream pass; print nothing otherwise. Portable bash 3.2.
 # Usage: kb-dream-check [KB_DIR]
 #        kb-dream-check --mark [KB_DIR]   record that a cleanup was merged just now
-# Due when about 10 notes are new or changed since the last cleanup, the root index is
-# truncated or over its limit, or 30 days have passed since the last cleanup (with notes present).
+# Due when about 10 notes are new or changed since the last cleanup, or 30 days have passed since the last cleanup (with notes present).
 # The marker lives in .git of the kb, so it is never committed.
 set -u
 
@@ -39,13 +38,6 @@ total="$(git -C "$KB" ls-files -c -o --exclude-standard 2>/dev/null | sort -u | 
 
 reasons=""
 [ "$changed" -ge 10 ] && reasons="$reasons; $changed notes new or changed"
-if [ -f "$KB/INDEX.md" ]; then
-  lines="$(wc -l <"$KB/INDEX.md" | tr -d ' ')"
-  bytes="$(wc -c <"$KB/INDEX.md" | tr -d ' ')"
-  if [ "$lines" -ge 80 ] || [ "$bytes" -ge 12288 ] || grep -q 'list the folder' "$KB/INDEX.md"; then
-    reasons="$reasons; the root index is at its size limit"
-  fi
-fi
 days=$(((now - last_time) / 86400))
 [ "$days" -ge 30 ] && [ "$total" -gt 0 ] && reasons="$reasons; $days days since the last cleanup"
 
