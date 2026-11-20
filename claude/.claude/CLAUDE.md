@@ -49,3 +49,7 @@ When you ask the user a question, include the context needed to answer it and gi
 ## File paths
 
 Give file paths in full, starting with / (on a Linux host use the real home directory, not ~). Put the path at the end of a line with no punctuation, or reword so a word follows it, because the terminal includes trailing punctuation in the link. Put each path on its own line after the sentence that names it, not inside the sentence. Give a line number in words, such as "line 42", not as a suffix.
+
+## Notes
+
+If the kb directory (~/.kb; print it as a full path) exists, read GUIDE.md there at the start of a session. Private notes live there. If it does not exist, ignore this section and the knowledge rules file.
