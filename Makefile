@@ -5,17 +5,19 @@ MAKEFLAGS += --no-print-directory
 
 DOTFILES ?= $(CURDIR)
 OS := $(shell uname -s)
+# KB=personal|work sets up this host's kb; empty (the default) installs none
+KB ?=
 
-.PHONY: help install link update verify
+.PHONY: help install link update verify kb kb-exclude
 
 help: ## List the targets
-	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-8s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-10s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 install: ## Full install: packages, tools, stow, post-stow steps
-	@$(DOTFILES)/scripts/install.sh
+	@KB=$(KB) $(DOTFILES)/scripts/install.sh
 
 link: ## Restow configs and run the post-stow steps
-	@$(DOTFILES)/scripts/install.sh --no-packages
+	@KB=$(KB) $(DOTFILES)/scripts/install.sh --no-packages
 
 update: ## Upgrade system packages, mise, uv, antidote, Claude Code, herdr-core, tldr, Neovim plugins
 ifeq ($(OS),Darwin)
@@ -35,3 +37,10 @@ endif
 
 verify: ## Run the read-only health check
 	@$(DOTFILES)/scripts/verify.sh
+
+kb: ## Set up this host's kb only: KB=personal|work
+	@KB=$(KB) $(DOTFILES)/scripts/kb-setup.sh
+
+kb-exclude: ## Keep a repo out of the kb: REPO=<dir>
+	@test -n "$(REPO)" || { echo "usage: make kb-exclude REPO=<dir>" >&2; exit 2; }
+	@$(DOTFILES)/scripts/kb-exclude.sh "$(REPO)"

@@ -15,6 +15,8 @@ Environment:
   GIT_NAME    Git user.name for ~/.config/git/local
   GIT_EMAIL   Git user.email for ~/.config/git/local
   GIT_SIGN    1 to set up SSH commit signing, 0 to decline it for good (asked once when unset)
+  KB          personal or work to set up this host's kb (default: none; a role recorded by an
+              earlier run is reused). Throwaway and shared VMs leave it unset.
 EOF
 }
 
@@ -376,6 +378,11 @@ if have codex; then
     warn "codex plugin add work@hhoikoo failed"
   fi
 fi
+
+# ------------------------------------------------------ 7b. Knowledge base
+step "7b. Knowledge base"
+# Opt-in: KB=personal|work, or the role recorded in the host config by an earlier run
+"$REPO/scripts/kb-setup.sh" || warn "kb setup failed; see above"
 
 # ------------------------------------------------- 8. Touch ID for sudo
 step "8. Touch ID for sudo"

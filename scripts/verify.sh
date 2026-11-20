@@ -159,4 +159,55 @@ if [[ $herdr_mode == core ]] && have_linger="$(loginctl show-user "$USER" -p Lin
   fi
 fi
 
+# 11. Knowledge base: only when this host has a role in the host config
+host_env="${KB_HOST_ENV:-$HOME/.config/dotfiles/host.env}"
+hget() { sed -n "s/^$1=//p" "$host_env" 2>/dev/null | tail -n 1 | sed -e 's/^["'\'']//' -e 's/["'\'']$//'; }
+kb_role="$(hget KB_ROLE)"
+if [[ -z $kb_role ]]; then
+  pass "kb: none on this host"
+else
+  kb="$HOME/.kb"
+  overlay="${CLAUDE_SETTINGS_OVERLAY:-$HOME/.config/claude/local.json}"
+  kb_remote="$(hget KB_REMOTE)"
+  if [[ ! -d $kb/.git ]]; then
+    bad "kb: $kb is missing or not a git clone; run make kb"
+  elif [[ $(git -C "$kb" remote get-url origin 2>/dev/null) != "$kb_remote" ]]; then
+    bad "kb: origin of $kb is not $kb_remote"
+  else
+    pass "kb ($kb_role): clone with origin $kb_remote"
+  fi
+  if [[ $(jq -r '.autoMemoryDirectory // ""' "$overlay" 2>/dev/null) == "$kb" ]] \
+    && jq -e '(.hooks.SessionStart // []) + (.hooks.SessionEnd // []) | map(.hooks[].command) | map(test("kb-sync")) | any' "$overlay" >/dev/null 2>&1; then
+    pass "kb: autoMemoryDirectory and hooks set in $overlay"
+  else
+    bad "kb: autoMemoryDirectory or hooks missing from $overlay; run make kb"
+  fi
+  if [[ $(jq -r '.autoDreamEnabled' "$overlay" 2>/dev/null) == false ]]; then
+    pass "kb: autoDreamEnabled false"
+  else
+    bad "kb: autoDreamEnabled is not false in $overlay"
+  fi
+  if [[ $kb_role == work ]]; then
+    # A work host must hold nothing of the personal kb: remote, folder or history
+    leaks=""
+    [[ $kb_remote == *kb-work || $kb_remote == *kb-work.git ]] || leaks+=" remote-config-not-kb-work"
+    [[ -d $kb/.git ]] && [[ $(git -C "$kb" remote | grep -vc '^origin$') -eq 0 ]] || leaks+=" extra-git-remote"
+    [[ -d $kb/.git ]] && git -C "$kb" remote -v | grep -q 'kb-personal' && leaks+=" personal-remote"
+    [[ -d $kb/.git ]] && git -C "$kb" for-each-ref --format='%(refname)' | grep -qv -e '^refs/heads/main$' -e '^refs/remotes/origin/' && leaks+=" foreign-refs"
+    for p in "$HOME/.kb-personal" "$HOME/kb-personal" "$HOME/.kb.personal"; do [[ -e $p ]] && leaks+=" $p"; done
+    if [[ -z $leaks ]]; then
+      pass "kb isolation: no personal remote, folder or refs on this work host"
+    else
+      bad "kb isolation:$leaks"
+    fi
+  fi
+  if [[ -d $kb/.git ]]; then
+    if lint_out="$("$REPO/bin/.local/bin/kb-lint" "$kb" 2>&1)"; then
+      pass "$(tail -n 1 <<<"$lint_out")"
+    else
+      warn "kb-lint found errors in $kb (run kb-lint)"
+    fi
+  fi
+fi
+
 exit "$fail"
