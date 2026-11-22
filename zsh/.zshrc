@@ -56,10 +56,12 @@ eval "$(zoxide init zsh --cmd cd)"
 export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 
 # Aliases
-alias ls='eza --group-directories-first --icons=auto'
-alias ll='eza -lah --git --group-directories-first --icons=auto'
-alias lt='eza --tree --level=2 --icons=auto'
-alias cat='bat --paging=never --style=plain'
+if [[ -z "$CLAUDECODE" ]]; then
+  alias ls='eza --group-directories-first --icons=auto'
+  alias ll='eza -lah --git --group-directories-first --icons=auto'
+  alias lt='eza --tree --level=2 --icons=auto'
+  alias cat='bat --paging=never --style=plain'
+fi
 alias top=btop
 alias vim=nvim
 alias vi=nvim
